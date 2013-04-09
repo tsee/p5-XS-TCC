@@ -13,6 +13,28 @@
 #include "XSUB.h"
 #include "ppport.h"
 
+#include <libtcc.h>
+
 MODULE = XS::TCC        PACKAGE = XS::TCC
 PROTOTYPES: DISABLE
 
+REQUIRE: 3.18
+
+TYPEMAP: <<HERE
+TCCState *	T_PTROBJ
+HERE
+
+MODULE = XS::TCC        PACKAGE = XS::TCC::TCCState
+
+TCCState *
+new()
+  CODE:
+    RETVAL = tcc_new();
+  OUTPUT: RETVAL
+
+void
+DESTROY(TCCState *self)
+  CODE:
+    tcc_delete(self);
+
+MODULE = XS::TCC        PACKAGE = XS::TCC

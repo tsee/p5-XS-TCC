@@ -21,13 +21,27 @@ PROTOTYPES: DISABLE
 REQUIRE: 3.18
 
 TYPEMAP: <<HERE
-TCCState *	T_PTROBJ
+TCCState * O_OBJECT
+
+OUTPUT
+O_OBJECT
+  sv_setref_pv( $arg, CLASS, (void*)$var );
+
+INPUT
+
+O_OBJECT
+  if( sv_isobject($arg) && (SvTYPE(SvRV($arg)) == SVt_PVMG) )
+    $var = ($type)SvIV((SV*)SvRV( $arg ));
+  else{
+    warn( \"${Package}::$func_name() -- $var is not a blessed SV reference\" );
+    XSRETURN_UNDEF;
+  }
 HERE
 
 MODULE = XS::TCC        PACKAGE = XS::TCC::TCCState
 
 TCCState *
-new()
+new(const char *CLASS)
   CODE:
     RETVAL = tcc_new();
   OUTPUT: RETVAL
@@ -36,5 +50,18 @@ void
 DESTROY(TCCState *self)
   CODE:
     tcc_delete(self);
+
+int
+compile_string(TCCState *self, SV *code)
+  PREINIT:
+    STRLEN len;
+    char *cstr;
+  CODE:
+    cstr = SvPV(code, len);
+    if (cstr[len-1] != '\0') {
+      croak("Need NUL terminated string!");
+    }
+    RETVAL = tcc_compile_string(self, cstr);
+  OUTPUT: RETVAL
 
 MODULE = XS::TCC        PACKAGE = XS::TCC

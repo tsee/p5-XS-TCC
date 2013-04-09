@@ -7,7 +7,34 @@ use XSLoader;
 
 our $VERSION = '0.01';
 
+use Exporter 'import';
+
 XSLoader::load('XS::TCC', $VERSION);
+
+our @EXPORT_OK = qw(
+  tcc_inline
+);
+our %EXPORT_TAGS = (all => \@EXPORT_OK);
+
+my $CodeHeader = <<'HERE';
+#include <stdlib.h>
+
+HERE
+
+sub tcc_inline {
+  my $code;
+  my %args;
+  if (@_ % 2) {
+    $code = pop @_;
+  }
+  %args = @_;
+  if (defined $code and exists $args{code}) {
+    croak("Can't specify code both as a named and as a positional parameter");
+  }
+  $code = $args{code} if not defined $code;
+  croak("Need code to compile") if not defined $code;
+
+}
 
 1;
 

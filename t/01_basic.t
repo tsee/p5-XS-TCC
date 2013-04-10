@@ -53,17 +53,17 @@ xs_tcc_test_bar(pTHX_ CV *cv)
 
   rv = SvIV(ST(0)) + SvIV(ST(1));
 
-  {
-    XSprePUSH; PUSHi((IV)rv);
-  }
-
+  { XSprePUSH; PUSHi((IV)rv); }
   XSRETURN(1);
 }
 HERE
+
   is($comp->relocate(), 0);
   my $sym = $comp->get_symbol("xs_tcc_test_bar");
   isa_ok($sym, "XS::TCC::TCCSymbol");
+
   my $sub = $sym->install_as_xsub("main::bar");
+
   ok(!eval {$sub->(); 1} && $@);
   is($sub->(3, 5), 8, "XSUB can add!");
 }

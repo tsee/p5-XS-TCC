@@ -70,12 +70,11 @@ SCOPE: {
 
 sub tcc_inline (@) {
   my $code;
-  my %args;
-  if (@_ % 2) {
-    $code = pop @_;
-  }
-  %args = @_;
-  if (defined $code and exists $args{code}) {
+
+  $code = pop @_ if @_ % 2;
+  my %args = @_;
+
+  if (defined $code and defined $args{code}) {
     croak("Can't specify code both as a named and as a positional parameter");
   }
   $code //= $args{code};

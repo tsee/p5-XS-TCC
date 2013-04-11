@@ -7,6 +7,7 @@ use XSLoader;
 
 our $VERSION = '0.01';
 
+use XS::TCC::Parser;
 use Exporter 'import';
 
 XSLoader::load('XS::TCC', $VERSION);

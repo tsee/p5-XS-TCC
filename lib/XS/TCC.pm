@@ -99,10 +99,29 @@ sub tcc_inline (@) {
     $typemap->add_string(string => $typemap_arg);
   }
 
-  # FIXME code to do the function signature parsing
+  # Function signature parsing
+  my $parse_result = XS::TCC::Parser::extract_function_metadata($code);
+  return
+    if not $parse_result
+    or not @{$parse_result->{function_names}};
+
   # FIXME code to eval the typemaps for the function sig
-  # FIXME code to do the compilation
+
+  # Do the compilation
+  my $compiler = _get_compiler();
+  $compiler->set_options($args{ccopts} // $CCOPTS);
+
+  # FIXME code to catch compile errors (see TCC API)
+
+  #$compiler->compile_string(...) # FIXME
+
+  $compiler->relocate();
+
   # FIXME code to install the XSUB
+  # for (functions) {
+  #   $compiler->install_as_xsub($package . "::" . $function_name);
+  # }
+
 }
 
 

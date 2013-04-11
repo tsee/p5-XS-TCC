@@ -31,7 +31,6 @@ HERE
 }
 
 SCOPE: {
-  my $include_dir = (-d 't' ? File::Spec->curdir : File::Spec->updir);
   my $comp = XS::TCC::TCCState->new;
   $comp->set_options($XS::TCC::CCOPTS);
 

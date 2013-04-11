@@ -67,4 +67,33 @@ HERE
 
 pass("Alive");
 
+SCOPE: {
+  my $comp = XS::TCC::TCCState->new;
+  $comp->set_options($XS::TCC::CCOPTS);
+  my $callback_count = 0;
+  my $errstr;
+  $comp->set_error_callback(sub {
+    $errstr = shift;
+    $callback_count++;
+  });
+  
+  $comp->compile_string(<<'HERE');
+#include <EXTERN.h>
+#include <perl.h>
+#include <XSUB.h>
+
+void
+xs_tcc_test_bar(pTHX_ CV *cv)
+{
+  this is a compile error
+}
+HERE
+
+  is($callback_count, 1, "error callback called");
+  ok(defined($errstr), "error string defined");
+  note("Compile error is: '$errstr'");
+}
+
+pass("Alive");
+
 done_testing();

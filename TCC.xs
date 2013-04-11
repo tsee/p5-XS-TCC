@@ -20,7 +20,32 @@ typedef void xstcc_symbol;
 typedef struct {
   TCCState *tccstate;
   CV *error_callback;
+#ifdef PERL_IMPLICIT_CONTEXT
+  tTHX perl_thread_context;
+#endif
 } xstcc_state;
+
+void
+xstcc_error_func(void *opaque, const char *msg)
+{
+  xstcc_state *state = (xstcc_state *)opaque;
+#ifdef PERL_IMPLICIT_CONTEXT
+  tTHX my_perl = state->perl_thread_context;
+#endif
+
+  if (state->error_callback != NULL) {
+    dSP;
+    dXSTARG;
+
+    PUSHMARK(SP);
+    XPUSHp(msg, strlen(msg));
+    PUTBACK;
+
+    call_sv((SV *)state->error_callback, G_DISCARD);
+  }
+  else
+    croak("%s", msg);
+}
 
 MODULE = XS::TCC        PACKAGE = XS::TCC
 PROTOTYPES: DISABLE
@@ -55,8 +80,11 @@ new(const char *CLASS)
     Newx(RETVAL, 1, xstcc_state);
     RETVAL->tccstate = tcc_new();
     RETVAL->error_callback = NULL;
+    RETVAL->perl_thread_context = aTHX;
     /* for now, always set output type to memory */
     tcc_set_output_type(RETVAL->tccstate, TCC_OUTPUT_MEMORY);
+    /* croaks by default */
+    tcc_set_error_func(RETVAL->tccstate, (void *)RETVAL, xstcc_error_func);
   OUTPUT: RETVAL
 
 void
@@ -106,8 +134,6 @@ set_error_callback(xstcc_state *self, CV *callback)
     SvREFCNT_inc(callback);
     SvREFCNT_dec(self->error_callback); /* includes NULL check */
     self->error_callback = callback;
-    /* TODO install actual C function callback using tcc_set_error_callback */
-
 
 MODULE = XS::TCC        PACKAGE = XS::TCC::TCCSymbol
 

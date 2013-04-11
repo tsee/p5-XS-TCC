@@ -3,7 +3,6 @@ use warnings;
 
 use Test::More;
 use XS::TCC;
-use ExtUtils::Embed qw();
 use File::Spec;
 
 pass("Alive");
@@ -34,13 +33,12 @@ HERE
 SCOPE: {
   my $include_dir = (-d 't' ? File::Spec->curdir : File::Spec->updir);
   my $comp = XS::TCC::TCCState->new;
-  $comp->set_options(ExtUtils::Embed::ccopts() . " -I$include_dir");
+  $comp->set_options($XS::TCC::CCOPTS);
 
   is($comp->compile_string(<<'HERE'), 0, "Real XS example compiles");
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
-#include <ppport.h>
 
 void
 xs_tcc_test_bar(pTHX_ CV *cv)

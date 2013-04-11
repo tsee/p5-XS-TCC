@@ -9,6 +9,7 @@ use Carp qw/croak/;
 use Exporter 'import';
 use XSLoader;
 
+use ExtUtils::Embed ();
 use ExtUtils::Typemaps;
 use File::Spec;
 
@@ -21,6 +22,7 @@ our @EXPORT_OK = qw(
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
+our $CCOPTS = ExtUtils::Embed::ccopts;
 
 my $CodeHeader = <<'HERE';
 #define PERL_NO_GET_CONTEXT
@@ -28,7 +30,7 @@ my $CodeHeader = <<'HERE';
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
-#include <ppport.h>
+
 HERE
 
 

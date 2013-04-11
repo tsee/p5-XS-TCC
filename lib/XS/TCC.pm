@@ -1,14 +1,18 @@
 package XS::TCC;
-use 5.008;
+use 5.10.1;
 use strict;
 use warnings;
-use Carp qw/croak/;
-use XSLoader;
 
 our $VERSION = '0.01';
 
-use XS::TCC::Parser;
+use Carp qw/croak/;
 use Exporter 'import';
+use XSLoader;
+
+use ExtUtils::Typemaps;
+use File::Spec;
+
+use XS::TCC::Parser;
 
 XSLoader::load('XS::TCC', $VERSION);
 
@@ -17,12 +21,54 @@ our @EXPORT_OK = qw(
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
-my $CodeHeader = <<'HERE';
-#include <stdlib.h>
 
+my $CodeHeader = <<'HERE';
+#define PERL_NO_GET_CONTEXT
+
+#include <EXTERN.h>
+#include <perl.h>
+#include <XSUB.h>
+#include <ppport.h>
 HERE
 
-sub tcc_inline {
+
+SCOPE: {
+  my $compiler;
+  sub _get_compiler {
+    return $compiler if $compiler;
+    $compiler = XS::TCC::TCCState->new;
+    return $compiler;
+  } # end _get_compiler
+} # end SCOPE
+
+
+SCOPE: {
+  my $core_typemap;
+  sub _get_core_typemap {
+    return $core_typemap if $core_typemap;
+
+    my @tm;
+    foreach my $dir (@INC) {
+      my $file = File::Spec->catfile($dir, ExtUtils => 'typemap');
+      unshift @tm, $file if -e $file;
+    }
+
+    $core_typemap = ExtUtils::Typemaps->new();
+    foreach my $typemap_loc (@tm) {
+      next unless -f $typemap_loc;
+      # skip directories, binary files etc.
+      warn("Warning: ignoring non-text typemap file '$typemap_loc'\n"), next
+        unless -T $typemap_loc;
+
+      $core_typemap->merge(file => $typemap_loc, replace => 1);
+    }
+
+    return $core_typemap;
+  } # end _get_core_typemap
+} # end SCOPE
+
+
+sub tcc_inline (@) {
   my $code;
   my %args;
   if (@_ % 2) {
@@ -32,10 +78,33 @@ sub tcc_inline {
   if (defined $code and exists $args{code}) {
     croak("Can't specify code both as a named and as a positional parameter");
   }
-  $code = $args{code} if not defined $code;
+  $code //= $args{code};
   croak("Need code to compile") if not defined $code;
 
+  my $package = $args{package} // (caller())[0];
+
+  # Set up the typemap object if any (defaulting to core typemaps)
+  my $typemap;
+  my $typemap_arg = $args{typemap};
+  if (not defined($typemap_arg)) {
+    $typemap = _get_core_typemap();
+  }
+  elsif (ref($typemap_arg)) {
+    $typemap = _get_core_typemap()->clone(shallow => 1);
+    $typemap->merge(typemap => $typemap_arg);
+  }
+  else {
+    $typemap = _get_core_typemap()->clone(shallow => 1);
+    $typemap->add_string(string => $typemap_arg);
+  }
+
+  # FIXME code to do the function signature parsing
+  # FIXME code to eval the typemaps for the function sig
+  # FIXME code to do the compilation
+  # FIXME code to install the XSUB
 }
+
+
 
 1;
 

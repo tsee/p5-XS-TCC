@@ -15,7 +15,12 @@
 
 #include <libtcc.h>
 
-typedef void tccsymbol;
+typedef void xstcc_symbol;
+
+typedef struct {
+  TCCState *tccstate;
+  CV *error_callback;
+} xstcc_state;
 
 MODULE = XS::TCC        PACKAGE = XS::TCC
 PROTOTYPES: DISABLE
@@ -24,7 +29,8 @@ REQUIRE: 3.18
 
 TYPEMAP: <<HERE
 TCCState * O_OBJECT
-tccsymbol * O_OBJECT
+xstcc_state * O_OBJECT
+xstcc_symbol * O_OBJECT
 
 OUTPUT
 O_OBJECT
@@ -43,58 +49,70 @@ HERE
 
 MODULE = XS::TCC        PACKAGE = XS::TCC::TCCState
 
-TCCState *
+xstcc_state *
 new(const char *CLASS)
   CODE:
-    RETVAL = tcc_new();
+    Newx(RETVAL, 1, xstcc_state);
+    RETVAL->tccstate = tcc_new();
+    RETVAL->error_callback = NULL;
     /* for now, always set output type to memory */
-    tcc_set_output_type(RETVAL, TCC_OUTPUT_MEMORY);
+    tcc_set_output_type(RETVAL->tccstate, TCC_OUTPUT_MEMORY);
   OUTPUT: RETVAL
 
 void
-DESTROY(TCCState *self)
+DESTROY(xstcc_state *self)
   CODE:
-    tcc_delete(self);
+    tcc_delete(self->tccstate);
+    SvREFCNT_dec(self->error_callback); /* has a NULL check */
+    Safefree(self);
 
 int
-compile_string(TCCState *self, SV *code)
+compile_string(xstcc_state *self, SV *code)
   PREINIT:
     STRLEN len;
     char *cstr;
   CODE:
     cstr = SvPV(code, len);
-    RETVAL = tcc_compile_string(self, cstr);
+    RETVAL = tcc_compile_string(self->tccstate, cstr);
   OUTPUT: RETVAL
 
-tccsymbol *
-get_symbol(TCCState *self, const char *name)
+xstcc_symbol *
+get_symbol(xstcc_state *self, const char *name)
   PREINIT:
     const char *CLASS = "XS::TCC::TCCSymbol";
     /* Note: Perl symbol objects must not live longer than TCCStates
      *       or they become invalid. */
   CODE:
-    RETVAL = tcc_get_symbol(self, name);
+    RETVAL = tcc_get_symbol(self->tccstate, name);
     if (RETVAL == NULL)
       croak("Symbol '%s' not found!", name);
   OUTPUT: RETVAL
 
 int
-relocate(TCCState *self)
+relocate(xstcc_state *self)
   CODE:
-    RETVAL = tcc_relocate(self, TCC_RELOCATE_AUTO);
+    RETVAL = tcc_relocate(self->tccstate, TCC_RELOCATE_AUTO);
   OUTPUT: RETVAL
 
 int
-set_options(TCCState *self, const char *opt)
+set_options(xstcc_state *self, const char *opt)
   CODE:
-    RETVAL = tcc_set_options(self, opt);
+    RETVAL = tcc_set_options(self->tccstate, opt);
   OUTPUT: RETVAL
+
+void
+set_error_callback(xstcc_state *self, CV *callback)
+  CODE:
+    SvREFCNT_inc(callback);
+    SvREFCNT_dec(self->error_callback); /* includes NULL check */
+    self->error_callback = callback;
+    /* TODO install actual C function callback using tcc_set_error_callback */
 
 
 MODULE = XS::TCC        PACKAGE = XS::TCC::TCCSymbol
 
 CV *
-install_as_xsub(tccsymbol *self, char *full_subname = NULL)
+install_as_xsub(xstcc_symbol *self, char *full_subname = NULL)
   PREINIT:
     XSUBADDR_t sub;
   CODE:

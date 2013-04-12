@@ -167,11 +167,12 @@ sub tcc_inline (@) {
   my @code = ($CodeHeader, $code);
   foreach my $cfun_name (@{$parse_result->{function_names}}) {
     my $fun_info = $parse_result->{functions}{$cfun_name};
-    _gen_single_function_xs_wrapper($cfun_name, $fun_info, \@code);
+    my $xs_fun = _gen_single_function_xs_wrapper($cfun_name, $fun_info, \@code);
+    $fun_info->{xs_function_name} = $xs_fun;
   }
 
   my $final_code = join "\n", @code;
-  #warn $final_code;
+  warn $final_code;
   my $compiler = _get_compiler();
 
   # Code to catch compile errors
@@ -190,11 +191,13 @@ sub tcc_inline (@) {
     Carp::croak($errmsg);
   }
 
-  # FIXME code to install the XSUB
-  # for (functions) {
-  #   my $sym = $compiler->get_symbol($xs_function_name);
-  #   $sym->install_as_xsub($package . "::" . $xs_function_name);
-  # }
+  # install the XSUBs
+  foreach my $cfun_name (@{$parse_result->{function_names}}) {
+    my $fun_info = $parse_result->{functions}{$cfun_name};
+    my $sym = $compiler->get_symbol($fun_info->{xs_function_name});
+    $sym->install_as_xsub($package . "::" . $cfun_name);
+  }
+
 }
 
 
@@ -212,6 +215,10 @@ sub _gen_single_function_xs_wrapper {
   my $nparams = scalar(@$arg_names);
   my $arg_names_str = join ", ", map {s/\W/_/; $_} @$arg_names;
 
+  my $ret_type = $fun_info->{return_type};
+  my $is_void_function = $ret_type eq 'void';
+  my $retval_decl = $is_void_function ? '' : "$ret_type RETVAL;";
+
   push @$code_ary, <<FUN_HEADER;
 XS_EXTERNAL(XS_$cfun_name); /* prototype to pass -Wmissing-prototypes */
 XS_EXTERNAL(XS_$cfun_name)
@@ -222,10 +229,17 @@ XS_EXTERNAL(XS_$cfun_name)
   PERL_UNUSED_VAR(ax); /* -Wall */
   SP -= items;
   {
+    $retval_decl
+
+
 FUN_HEADER
 
   # FIXME emit input typemaps
-  # FIXME emit function call
+
+  # emit function call
+  my $fun_call_assignment = $is_void_function ? "" : "RETVAL = ";
+  my $arglist = ""; # FIXME generate arglist
+  push @$code_ary, "    ${fun_call_assignment}$cfun_name($arglist);\n";
   # FIXME emit output typemaps
 
   push @$code_ary, <<FUN_FOOTER;

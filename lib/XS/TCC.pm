@@ -31,6 +31,64 @@ my $CodeHeader = <<'HERE';
 #include <perl.h>
 #include <XSUB.h>
 
+/* The XS_EXTERNAL macro is used for functions that must not be static
+ * like the boot XSUB of a module. If perl didn't have an XS_EXTERNAL
+ * macro defined, the best we can do is assume XS is the same.
+ * Dito for XS_INTERNAL.
+ */
+#ifndef XS_EXTERNAL
+#  define XS_EXTERNAL(name) XS(name)
+#endif
+#ifndef XS_INTERNAL
+#  define XS_INTERNAL(name) XS(name)
+#endif
+
+#ifndef PERL_UNUSED_VAR
+#  define PERL_UNUSED_VAR(var) if (0) var = var
+#endif
+
+#ifndef dVAR
+#  define dVAR		dNOOP
+#endif
+
+
+#ifndef PERL_ARGS_ASSERT_CROAK_XS_USAGE
+#define PERL_ARGS_ASSERT_CROAK_XS_USAGE assert(cv); assert(params)
+
+/* prototype to pass -Wmissing-prototypes */
+STATIC void
+S_croak_xs_usage(pTHX_ const CV *const cv, const char *const params);
+
+STATIC void
+S_croak_xs_usage(pTHX_ const CV *const cv, const char *const params)
+{
+    const GV *const gv = CvGV(cv);
+
+    PERL_ARGS_ASSERT_CROAK_XS_USAGE;
+
+    if (gv) {
+        const char *const gvname = GvNAME(gv);
+        const HV *const stash = GvSTASH(gv);
+        const char *const hvname = stash ? HvNAME(stash) : NULL;
+
+        if (hvname)
+            Perl_croak(aTHX_ "Usage: %s::%s(%s)", hvname, gvname, params);
+        else
+            Perl_croak(aTHX_ "Usage: %s(%s)", gvname, params);
+    } else {
+        /* Pants. I don't think that it should be possible to get here. */
+        Perl_croak(aTHX_ "Usage: CODE(0x%"UVxf")(%s)", PTR2UV(cv), params);
+    }
+}
+#undef  PERL_ARGS_ASSERT_CROAK_XS_USAGE
+
+#ifdef PERL_IMPLICIT_CONTEXT
+#  define croak_xs_usage(a,b)    S_croak_xs_usage(aTHX_ a,b)
+#else
+#  define croak_xs_usage        S_croak_xs_usage
+#endif
+
+#endif
 HERE
 
 
@@ -106,33 +164,37 @@ sub tcc_inline (@) {
     or not @{$parse_result->{function_names}};
 
   # FIXME code to eval the typemaps for the function sig
+  my @code = ($CodeHeader, $code);
+  foreach my $cfun_name (@{$parse_result->{function_names}}) {
+    my $fun_info = $parse_result->{functions}{$cfun_name};
+    _gen_single_function_xs_wrapper($cfun_name, $fun_info, \@code);
+  }
 
+  my $final_code = join "\n", @code;
+  #warn $final_code;
   my $compiler = _get_compiler();
 
   # Code to catch compile errors
   my $errmsg;
-  my $err_hook = sub {
-    $errmsg = shift;
-  };
+  my $err_hook = sub { $errmsg = $_[0] };
+
   $compiler->set_error_callback($err_hook);
 
   # Do the compilation
   $compiler->set_options($args{ccopts} // $CCOPTS);
+  $compiler->compile_string($final_code);
+  $compiler->relocate();
 
-
-  #$compiler->compile_string(...) # FIXME
-  if ($errmsg) {
+  if (defined $errmsg) {
     $errmsg = _build_compile_error_msg($errmsg, 1);
     Carp::croak($errmsg);
   }
 
-  $compiler->relocate();
-
   # FIXME code to install the XSUB
   # for (functions) {
-  #   $compiler->install_as_xsub($package . "::" . $function_name);
+  #   my $sym = $compiler->get_symbol($xs_function_name);
+  #   $sym->install_as_xsub($package . "::" . $xs_function_name);
   # }
-
 }
 
 
@@ -141,6 +203,38 @@ sub _build_compile_error_msg {
   $caller_level++;
   # TODO write code to emit file/line info
   return $msg;
+}
+
+sub _gen_single_function_xs_wrapper {
+  my ($cfun_name, $fun_info, $code_ary) = @_;
+
+  my $arg_names = $fun_info->{arg_names};
+  my $nparams = scalar(@$arg_names);
+  my $arg_names_str = join ", ", map {s/\W/_/; $_} @$arg_names;
+
+  push @$code_ary, <<FUN_HEADER;
+XS_EXTERNAL(XS_$cfun_name); /* prototype to pass -Wmissing-prototypes */
+XS_EXTERNAL(XS_$cfun_name)
+{
+  dVAR; dXSARGS;
+  if (items != $nparams)
+    croak_xs_usage(cv,  "$arg_names_str");
+  PERL_UNUSED_VAR(ax); /* -Wall */
+  SP -= items;
+  {
+FUN_HEADER
+
+  # FIXME emit input typemaps
+  # FIXME emit function call
+  # FIXME emit output typemaps
+
+  push @$code_ary, <<FUN_FOOTER;
+  }
+  XRETURN(1);
+}
+FUN_FOOTER
+
+  return();
 }
 
 1;

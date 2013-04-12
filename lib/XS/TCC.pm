@@ -173,7 +173,6 @@ sub tcc_inline (@) {
   }
 
   my $final_code = join "\n", @code;
-  warn $final_code;
   my $compiler = _get_compiler();
 
   # Code to catch compile errors
@@ -219,9 +218,10 @@ sub _gen_single_function_xs_wrapper {
   my $ret_type = $fun_info->{return_type};
   my $is_void_function = $ret_type eq 'void';
   my $retval_decl = $is_void_function ? '' : "$ret_type RETVAL;";
+  my $xs_fun_name = "XS_$cfun_name";
   push @$code_ary, <<FUN_HEADER;
-XS_EXTERNAL(XS_$cfun_name); /* prototype to pass -Wmissing-prototypes */
-XS_EXTERNAL(XS_$cfun_name)
+XS_EXTERNAL($xs_fun_name); /* prototype to pass -Wmissing-prototypes */
+XS_EXTERNAL($xs_fun_name)
 {
   dVAR; dXSARGS;
   if (items != $nparams)
@@ -234,11 +234,56 @@ XS_EXTERNAL(XS_$cfun_name)
 
 FUN_HEADER
 
-  # FIXME emit input typemaps
+  # emit input typemaps
+  my @input_decl;
+  my @input_assign;
+  for my $argno (0..$#{$fun_info->{arg_names}}) {
+    my $aname = $fun_info->{arg_names}[$argno];
+    my $atype = $fun_info->{arg_types}[$argno];
+
+    my $tm = $typemap->get_typemap(ctype => $atype);
+
+    my $im = !$tm ? undef : $typemap->get_inputmap(xstype => $tm->xstype);
+    Carp::croak("No input typemap found for return type '$atype'")
+      if not $im;
+    my $imcode = $im->cleaned_code;
+
+    my $vars = {
+      Package => $package,
+      ALIAS => $cfun_name,
+      func_name => $cfun_name,
+      Full_func_name => $cfun_name,
+      pname => $package . "::" . $cfun_name,
+      type => $atype,
+      ntype => $atype,
+      arg => "ST($argno)",
+      var => $aname,
+      init => undef,
+      # FIXME some of these are guesses at their true meaning. Validate in EU::PXS
+      num => $argno,
+      printed_name => $aname,
+      argoff => $argno,
+    };
+
+    # FIXME do we want to support the obscure ARRAY/Ptr logic (subtype, ntype)?
+    my $out = ExtUtils::ParseXS::Eval::eval_input_typemap_code(
+      $vars, qq{"$imcode"}, $vars
+    );
+
+    $out =~ s/;\s*$//;
+    if ($out =~ /^\s*\Q$aname\E\s*=/) {
+      push @input_decl, "    $atype $out;";
+    }
+    else {
+      push @input_decl, "    $atype $aname;";
+      push @input_assign, "    $out;";
+    }
+  }
+  push @$code_ary, @input_decl, @input_assign;
 
   # emit function call
   my $fun_call_assignment = $is_void_function ? "" : "RETVAL = ";
-  my $arglist = ""; # FIXME generate arglist
+  my $arglist = join ", ", @{ $fun_info->{arg_names} };
   push @$code_ary, "    ${fun_call_assignment}$cfun_name($arglist);\n";
 
   # emit output typemap
@@ -273,13 +318,14 @@ FUN_HEADER
   }
 
 
+  my $nreturnvalues = $is_void_function ? 0 : 1;
   push @$code_ary, <<FUN_FOOTER;
   }
-  XRETURN(1);
+  XSRETURN($nreturnvalues);
 }
 FUN_FOOTER
 
-  return();
+  return($xs_fun_name);
 }
 
 1;

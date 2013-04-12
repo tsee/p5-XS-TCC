@@ -11,6 +11,7 @@ use XSLoader;
 
 use ExtUtils::Embed ();
 use ExtUtils::Typemaps;
+use ExtUtils::ParseXS::Eval;
 use File::Spec;
 
 use XS::TCC::Parser;
@@ -167,7 +168,7 @@ sub tcc_inline (@) {
   my @code = ($CodeHeader, $code);
   foreach my $cfun_name (@{$parse_result->{function_names}}) {
     my $fun_info = $parse_result->{functions}{$cfun_name};
-    my $xs_fun = _gen_single_function_xs_wrapper($cfun_name, $fun_info, \@code);
+    my $xs_fun = _gen_single_function_xs_wrapper($package, $cfun_name, $fun_info, $typemap, \@code);
     $fun_info->{xs_function_name} = $xs_fun;
   }
 
@@ -209,7 +210,7 @@ sub _build_compile_error_msg {
 }
 
 sub _gen_single_function_xs_wrapper {
-  my ($cfun_name, $fun_info, $code_ary) = @_;
+  my ($package, $cfun_name, $fun_info, $typemap, $code_ary) = @_;
 
   my $arg_names = $fun_info->{arg_names};
   my $nparams = scalar(@$arg_names);
@@ -218,7 +219,6 @@ sub _gen_single_function_xs_wrapper {
   my $ret_type = $fun_info->{return_type};
   my $is_void_function = $ret_type eq 'void';
   my $retval_decl = $is_void_function ? '' : "$ret_type RETVAL;";
-
   push @$code_ary, <<FUN_HEADER;
 XS_EXTERNAL(XS_$cfun_name); /* prototype to pass -Wmissing-prototypes */
 XS_EXTERNAL(XS_$cfun_name)
@@ -240,7 +240,38 @@ FUN_HEADER
   my $fun_call_assignment = $is_void_function ? "" : "RETVAL = ";
   my $arglist = ""; # FIXME generate arglist
   push @$code_ary, "    ${fun_call_assignment}$cfun_name($arglist);\n";
-  # FIXME emit output typemaps
+
+  # emit output typemap
+  if (not $is_void_function) {
+    my $tm = $typemap->get_typemap(ctype => $ret_type);
+
+    my $om = !$tm ? undef : $typemap->get_outputmap(xstype => $tm->xstype);
+    Carp::croak("No output typemap found for return type '$ret_type'")
+      if not $om;
+
+    my $omcode = $om->cleaned_code;
+    my $vars = {
+      Package => $package,
+      ALIAS => $cfun_name,
+      func_name => $cfun_name,
+      Full_func_name => $cfun_name,
+      pname => $package . "::" . $cfun_name,
+      type => $ret_type,
+      ntype => $ret_type,
+      arg => "ST(0)",
+      var => "RETVAL",
+    };
+
+    # FIXME do we want to support the obscure ARRAY/Ptr logic (subtype, ntype)?
+
+    # TODO TARG ($om->targetable) optimization!
+    my $out = ExtUtils::ParseXS::Eval::eval_output_typemap_code(
+      $vars, qq{"$omcode"}, $vars
+    );
+    push @$code_ary, "    ST(0) = sv_newmortal();";
+    push @$code_ary, "    " . $out;
+  }
+
 
   push @$code_ary, <<FUN_FOOTER;
   }

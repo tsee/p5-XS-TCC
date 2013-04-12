@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = '0.01';
 
-use Carp qw/croak/;
+use Carp ();
 use Exporter 'import';
 use XSLoader;
 
@@ -77,10 +77,10 @@ sub tcc_inline (@) {
   my %args = @_;
 
   if (defined $code and defined $args{code}) {
-    croak("Can't specify code both as a named and as a positional parameter");
+    Carp::croak("Can't specify code both as a named and as a positional parameter");
   }
   $code //= $args{code};
-  croak("Need code to compile") if not defined $code;
+  Carp::croak("Need code to compile") if not defined $code;
 
   my $package = $args{package} // (caller())[0];
 
@@ -107,13 +107,24 @@ sub tcc_inline (@) {
 
   # FIXME code to eval the typemaps for the function sig
 
-  # Do the compilation
   my $compiler = _get_compiler();
+
+  # Code to catch compile errors
+  my $errmsg;
+  my $err_hook = sub {
+    $errmsg = shift;
+  };
+  $compiler->set_error_callback($err_hook);
+
+  # Do the compilation
   $compiler->set_options($args{ccopts} // $CCOPTS);
 
-  # FIXME code to catch compile errors (see TCC API)
 
   #$compiler->compile_string(...) # FIXME
+  if ($errmsg) {
+    $errmsg = _build_compile_error_msg($errmsg, 1);
+    Carp::croak($errmsg);
+  }
 
   $compiler->relocate();
 
@@ -125,6 +136,12 @@ sub tcc_inline (@) {
 }
 
 
+sub _build_compile_error_msg {
+  my ($msg, $caller_level) = @_;
+  $caller_level++;
+  # TODO write code to emit file/line info
+  return $msg;
+}
 
 1;
 

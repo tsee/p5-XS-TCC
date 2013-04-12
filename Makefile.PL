@@ -30,12 +30,15 @@ WriteMakefile1(
         },
     },
     BUILD_REQUIRES => {
-        'Test::More' => 0,
+        'Test::More' => '0.88',
     },
     NAME              => 'XS::TCC',
     VERSION_FROM      => 'lib/XS/TCC.pm', # finds $VERSION
     PREREQ_PM         => {
         'XSLoader' => 0,
+        'ExtUtils::Typemaps' => '0.18_01',
+        'ExtUtils::Embed' => 0,
+        'File::Spec' => 0,
     }, # e.g., Module::Name => 1.1
     LICENSE => 'perl',
     ABSTRACT_FROM => 'lib/XS/TCC.pm',

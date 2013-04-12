@@ -25,6 +25,8 @@ tcc_inline
 
 pass("Alive");
 
-is(bar(3), 6, "Simple function is callable");
+is(foo(3), 6, "Simple function is callable");
+
+pass("Alive");
 
 done_testing();

@@ -173,6 +173,9 @@ sub tcc_inline (@) {
   }
 
   my $final_code = join "\n", @code;
+
+  warn _add_line_nums($final_code) if $args{warn_code};
+
   my $compiler = _get_compiler();
 
   # Code to catch compile errors
@@ -329,6 +332,16 @@ FUN_HEADER
 FUN_FOOTER
 
   return($xs_fun_name);
+}
+
+# just for debugging
+sub _add_line_nums {
+  my $code = shift;
+  my $i = shift || 1;
+  my @l = split /\n/, $code;
+  my $n = @l + $i - 1;
+  my $len = length($n);
+  return join("\n", map sprintf("% ${len}u: %s", $i++, $_), @l);
 }
 
 1;

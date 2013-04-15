@@ -80,7 +80,9 @@ new(const char *CLASS)
     Newx(RETVAL, 1, xstcc_state);
     RETVAL->tccstate = tcc_new();
     RETVAL->error_callback = NULL;
+#ifdef PERL_IMPLICIT_CONTEXT
     RETVAL->perl_thread_context = aTHX;
+#endif
     /* for now, always set output type to memory */
     tcc_set_output_type(RETVAL->tccstate, TCC_OUTPUT_MEMORY);
     /* croaks by default */

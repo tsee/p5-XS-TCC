@@ -140,12 +140,12 @@ set_error_callback(xstcc_state *self, CV *callback)
 MODULE = XS::TCC        PACKAGE = XS::TCC::TCCSymbol
 
 CV *
-install_as_xsub(xstcc_symbol *self, char *full_subname = NULL)
+as_xsub(xstcc_symbol *self)
   PREINIT:
     XSUBADDR_t sub;
   CODE:
     sub = (XSUBADDR_t)self;
-    RETVAL = newXS(full_subname, sub, "anon");
+    RETVAL = newXS(NULL, sub, "anon");
     sv_2mortal((SV *)RETVAL);
   OUTPUT: RETVAL
 

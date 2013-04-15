@@ -195,7 +195,10 @@ sub tcc_inline (@) {
   foreach my $cfun_name (@{$parse_result->{function_names}}) {
     my $fun_info = $parse_result->{functions}{$cfun_name};
     my $sym = $compiler->get_symbol($fun_info->{xs_function_name});
-    $sym->install_as_xsub($package . "::" . $cfun_name);
+    my $perl_name = $package . "::" . $cfun_name;
+    my $sub = $sym->as_xsub();
+    no strict 'refs';
+    *{"$perl_name"} = $sub;
   }
 
 }

@@ -17,6 +17,7 @@ tcc_inline
 pass("Alive");
 
 tcc_inline
+  #warn_code => 1,
   q{
     int foo(int bar) {
       return bar * 2;
@@ -25,7 +26,7 @@ tcc_inline
 
 pass("Alive");
 
-is(foo(3), 6, "Simple function is callable");
+is(main::foo(3), 6, "Simple function is callable");
 
 pass("Alive");
 

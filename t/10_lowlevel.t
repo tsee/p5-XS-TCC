@@ -59,7 +59,7 @@ HERE
   my $sym = $comp->get_symbol("xs_tcc_test_bar");
   isa_ok($sym, "XS::TCC::TCCSymbol");
 
-  my $sub = $sym->install_as_xsub("main::bar");
+  my $sub = $sym->as_xsub();
 
   ok(!eval {$sub->(); 1} && $@);
   is($sub->(3, 5), 8, "XSUB can add!");

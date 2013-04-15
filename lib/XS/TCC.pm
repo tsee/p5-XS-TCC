@@ -224,7 +224,8 @@ sub _gen_single_function_xs_wrapper {
   my $ret_type = $fun_info->{return_type};
   my $is_void_function = $ret_type eq 'void';
   my $retval_decl = $is_void_function ? '' : "$ret_type RETVAL;";
-  my $xs_fun_name = "XS_$cfun_name";
+  (my $xs_pkg_name = $package) =~ s/:+/_/g;
+  my $xs_fun_name = "XS_${xs_pkg_name}_$cfun_name";
   push @$code_ary, <<FUN_HEADER;
 XS_EXTERNAL($xs_fun_name); /* prototype to pass -Wmissing-prototypes */
 XS_EXTERNAL($xs_fun_name)
@@ -232,8 +233,8 @@ XS_EXTERNAL($xs_fun_name)
   dVAR; dXSARGS;
   if (items != $nparams)
     croak_xs_usage(cv,  "$arg_names_str");
-  PERL_UNUSED_VAR(ax); /* -Wall */
-  SP -= items;
+  /* PERL_UNUSED_VAR(ax); */ /* -Wall */
+  /* SP -= items; */
   {
     $retval_decl
 

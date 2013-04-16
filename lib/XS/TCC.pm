@@ -26,6 +26,8 @@ our %EXPORT_TAGS = (all => \@EXPORT_OK);
 our $CCOPTS = ExtUtils::Embed::ccopts;
 
 my $CodeHeader = <<'HERE';
+#ifndef XS_TCC_INIT
+#define XS_TCC_INIT
 #define PERL_NO_GET_CONTEXT
 
 #include <EXTERN.h>
@@ -90,14 +92,16 @@ S_croak_xs_usage(pTHX_ const CV *const cv, const char *const params)
 #endif
 
 #endif
+
+#endif /* XS_TCC_INIT */
 HERE
 
 
 SCOPE: {
-  my $compiler;
+  #my $compiler;
   sub _get_compiler {
-    return $compiler if $compiler;
-    $compiler = XS::TCC::TCCState->new;
+    #return $compiler if $compiler;
+    my $compiler = XS::TCC::TCCState->new;
     return $compiler;
   } # end _get_compiler
 } # end SCOPE

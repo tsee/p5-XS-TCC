@@ -355,12 +355,41 @@ __END__
 
 =head1 NAME
 
-XS::TCC - blah blah blah
+XS::TCC - Embed, wrap & compile C code in Perl without going to disk
 
 =head1 SYNOPSIS
 
+  # WARNING interface is bound to change...
+  use XS::TCC qw(tcc_inline);
+  
+  tcc_inline q{
+    int foo(int bar) {
+      return bar * 2;
+    }
+  };
+  
+  print foo(3.1), "\n"; # prints 6.2
+  # more elaborate functions involving Perl types work as well
 
 =head1 DESCRIPTION
+
+B<This is a highly experimental module. Use at your own risk. Get in
+touch with the author(s) if in doubt.>
+
+C<XS::TCC> allows you to embed C code into your Perl that is compiled
+and linked on the fly, in memory, without ever touching your disk
+except to read the Perl code in the first place. This amazing feat
+actually has very little to do with this module's code but rather
+with TCC (TinyCC, see tinycc.org) which allows compilation and linking
+in memory.
+
+On my first-gen core i5 laptop, making two small-medium size functions
+available to Perl takes around 30ms including parse, wrapper code generation,
+typemapping, compilation, linking, and XSUB installation. Wrapping more code
+is bound to be relatively faster.
+
+The output of TCC is slower than the equivalent function compiled with GCC,
+but both beat regular Perl by a wide margin {citation required}.
 
 =head1 SEE ALSO
 

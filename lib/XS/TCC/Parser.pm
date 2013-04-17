@@ -75,7 +75,6 @@ sub extract_function_metadata {
   )}xo;
 
   my $re_identifier = qr{ (\w+) $sp* }xo;
-
   while( $code =~ m{
           $re_plausible_place_to_begin_a_declaration
           ( $re_type $re_identifier $RE_balanced_parens $sp* (\;|\{) )
@@ -84,6 +83,7 @@ sub extract_function_metadata {
     my($type, $identifier, $args, $what) = ($2,$3,$4,$5);
     $args = "" if $args =~ /^\s+$/;
 
+    my $need_threading_context = 0;
     my $is_decl     = $what eq ';';
     my $function    = $identifier;
     my $return_type = _normalize_type($type);
@@ -96,12 +96,20 @@ sub extract_function_metadata {
     my(@arg_names,@arg_types);
     my $dummy_name = 'arg1';
 
+    my $argno = 0;
     foreach my $arg (@arguments) {
+      # recognize threading context passing as part of first arg
+      if ($argno++ == 0 and $arg =~ s/^\s*pTHX_?\s*//) {
+        $need_threading_context = 1;
+        next if $arg !~ /\S/;
+      }
+
       my $arg_no_space = $arg;
-      $arg_no_space =~ s/\s//g;
+      $arg_no_space =~ s/\s+//g;
+
       # If $arg_no_space is 'void', there will be no identifier.
-      if(my($type, $identifier) =
-         $arg =~ /^\s*$re_type(?:$re_identifier)?\s*$/o)
+      if( my($type, $identifier) =
+          $arg =~ /^\s*$re_type(?:$re_identifier)?\s*$/o )
       {
         my $arg_name = $identifier;
         my $arg_type = _normalize_type($type);
@@ -135,6 +143,7 @@ sub extract_function_metadata {
     $results->{functions}{$function}{return_type}= $return_type;
     $results->{functions}{$function}{arg_names} = [@arg_names];
     $results->{functions}{$function}{arg_types} = [@arg_types];
+    $results->{functions}{$function}{need_threading_context} = $need_threading_context;
 
     next;
 

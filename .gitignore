@@ -13,5 +13,4 @@ TCC.o
 TCC.c
 *.o
 tcc-0.9.26.tar.bz2
-tcc-0.9.26/
 tcc-install/

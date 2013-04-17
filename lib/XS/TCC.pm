@@ -170,7 +170,7 @@ sub tcc_inline (@) {
     if not $parse_result
     or not @{$parse_result->{function_names}};
 
-  # FIXME code to eval the typemaps for the function sig
+  # eval the typemaps for the function sig
   my @code = ($CodeHeader, $code);
   foreach my $cfun_name (@{$parse_result->{function_names}}) {
     my $fun_info = $parse_result->{functions}{$cfun_name};
@@ -255,9 +255,9 @@ FUN_HEADER
     my $atype = $fun_info->{arg_types}[$argno];
 
     my $tm = $typemap->get_typemap(ctype => $atype);
-
     my $im = !$tm ? undef : $typemap->get_inputmap(xstype => $tm->xstype);
-    Carp::croak("No input typemap found for return type '$atype'")
+
+    Carp::croak("No input typemap found for type '$atype'")
       if not $im;
     my $imcode = $im->cleaned_code;
 

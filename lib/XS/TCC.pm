@@ -28,7 +28,7 @@ our $CCOPTS = ExtUtils::Embed::ccopts;
 my $CodeHeader = <<'HERE';
 #ifndef XS_TCC_INIT
 #define XS_TCC_INIT
-#define PERL_NO_GET_CONTEXT
+/* #define PERL_NO_GET_CONTEXT */
 
 #include <EXTERN.h>
 #include <perl.h>

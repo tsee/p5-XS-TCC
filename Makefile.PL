@@ -4,7 +4,27 @@ use strict;
 use warnings;
 
 use ExtUtils::MakeMaker;
-use Config;
+use Config qw(%Config);
+use Getopt::Long qw(GetOptions);
+use Cwd qw(cwd);
+
+my $debug = $ENV{DEBUG};
+my $tcc_static_lib_location = '';
+my $tcc_include_location = '';
+my $tcc_source_location = 'tcc-0.9.26';
+
+GetOptions(
+    'debug|d' => \$debug,
+    'tcc_static_lib_location=s' => \$tcc_static_lib_location,
+    'tcc_include_location=s' => \$tcc_include_location,
+);
+
+my $do_build_tcc = $tcc_static_lib_location eq '' ? 1 : 0;
+$tcc_include_location = File::Spec->catdir($tcc_source_location)
+  if $tcc_include_location eq '';
+$tcc_static_lib_location = File::Spec->catfile($tcc_source_location, 'libtcc' . $Config{lib_ext})
+  if $tcc_static_lib_location eq '';
+
 
 our $OPTIMIZE;
 
@@ -16,8 +36,8 @@ if ($Config{gccversion}) {
     $OPTIMIZE = $Config{optimize};
 }
 
-if ($ENV{DEBUG}) {
-  $OPTIMIZE .= ' -g';
+if ($debug) {
+    $OPTIMIZE .= ' -g';
 }
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
@@ -39,17 +59,40 @@ WriteMakefile1(
         'ExtUtils::Typemaps' => '0.18_01',
         'ExtUtils::Embed' => 0,
         'File::Spec' => 0,
-    }, # e.g., Module::Name => 1.1
+    },
     LICENSE => 'perl',
     ABSTRACT_FROM => 'lib/XS/TCC.pm',
     AUTHOR => 'Steffen Mueller <smueller@cpan.org>',
-    LIBS              => ['-ltcc'], # e.g., '-lm'
+    #LIBS              => ['-Ltcc-install/lib', '-ltcc'], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
-    INC               => '-I.', # e.g., '-I. -I/usr/include/other'
+    INC               => '-I. -I' . $tcc_include_location,
     OPTIMIZE          => $OPTIMIZE,
     # Un-comment this if you add C files to link with later:
     OBJECT            => '$(O_FILES)', # link all the C files too
+    META_MERGE => {
+        configure_requires => {
+            'Getopt::Long' => 0,
+            'Cwd' => 0,
+            'File::Spec' => 0,
+        },
+    },
+    ($do_build_tcc ? (MYEXTLIB => $tcc_static_lib_location) : ()),
 );
+
+sub MY::postamble {
+  if ($do_build_tcc) {
+    my $extra = join " ", $Config{ccflags}, $Config{cccdlflags};
+    return <<HERE;
+\$(MYEXTLIB):
+	cd $tcc_source_location && \$(SHELL) ./configure --extra-cflags='$extra' && \$(MAKE)
+
+clean ::
+	cd $tcc_source_location && \$(MAKE) clean
+
+HERE
+  }
+}
+
 
 sub WriteMakefile1 {  #Written by Alexandr Ciornii, version 0.20. Added by eumm-upgrade.
     my %params=@_;
@@ -73,3 +116,4 @@ sub WriteMakefile1 {  #Written by Alexandr Ciornii, version 0.20. Added by eumm-
 
     WriteMakefile(%params);
 }
+

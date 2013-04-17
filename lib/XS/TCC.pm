@@ -98,10 +98,12 @@ HERE
 
 
 SCOPE: {
+  my @compilers; # never die...
   #my $compiler;
   sub _get_compiler {
     #return $compiler if $compiler;
     my $compiler = XS::TCC::TCCState->new;
+    push @compilers, $compiler;
     return $compiler;
   } # end _get_compiler
 } # end SCOPE

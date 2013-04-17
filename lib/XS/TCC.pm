@@ -191,7 +191,7 @@ sub tcc_inline (@) {
   $compiler->set_error_callback($err_hook);
 
   # Do the compilation
-  $compiler->set_options($args{ccopts} // $CCOPTS);
+  $compiler->set_options(($args{ccopts} // $CCOPTS));
   $compiler->compile_string($final_code);
   $compiler->relocate();
 
@@ -247,6 +247,8 @@ XS_EXTERNAL($xs_fun_name)
 
 FUN_HEADER
 
+  my $do_pass_threading_context = $fun_info->{need_threading_context};
+
   # emit input typemaps
   my @input_decl;
   my @input_assign;
@@ -296,8 +298,13 @@ FUN_HEADER
 
   # emit function call
   my $fun_call_assignment = $is_void_function ? "" : "RETVAL = ";
-  my $arglist = join ", ", @{ $fun_info->{arg_names} };
-  push @$code_ary, "    ${fun_call_assignment}$cfun_name($arglist);\n";
+  my $arglist = join ", ",  @{ $fun_info->{arg_names} };
+  my $threading_context = "";
+  if ($do_pass_threading_context) {
+     $threading_context = scalar(@{ $fun_info->{arg_names} }) == 0
+                          ? "aTHX " : "aTHX_ ";
+  }
+  push @$code_ary, "    ${fun_call_assignment}$cfun_name($threading_context$arglist);\n";
 
   # emit output typemap
   if (not $is_void_function) {

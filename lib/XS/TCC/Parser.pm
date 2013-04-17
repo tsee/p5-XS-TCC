@@ -143,7 +143,7 @@ sub extract_function_metadata {
     $results->{functions}{$function}{return_type}= $return_type;
     $results->{functions}{$function}{arg_names} = [@arg_names];
     $results->{functions}{$function}{arg_types} = [@arg_types];
-    $results->{functions}{$function}{need_threading_context} = $need_threading_context;
+    $results->{functions}{$function}{need_threading_context} = $need_threading_context if $need_threading_context;
 
     next;
 

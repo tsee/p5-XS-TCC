@@ -14,7 +14,9 @@ tcc_inline
   q{
   };
 
-pass("Alive");
+pass("Alive after compilation");
+
+################################################################################
 
 tcc_inline
   #warn_code => 1,
@@ -24,11 +26,13 @@ tcc_inline
     }
   };
 
-pass("Alive");
+pass("Alive after compilation");
 
 is(main::foo(3), 6, "Simple function is callable");
 
 pass("Alive");
+
+################################################################################
 
 tcc_inline
   #warn_code => 1,
@@ -62,13 +66,30 @@ tcc_inline
     }
   };
 
-pass("Alive");
+pass("Alive after compilation");
 
-is(foo2(2), 4);
+is(foo2(2), 4, "Simple function wrapped as part of multi-function wrapper");
 
 pass("Alive");
 
 is_deeply(pairwise_sum([1..10], [1..9]), [map $_*2, 1..9], "pairwise sum wrapped ok");
+
+pass("Alive");
+
+################################################################################
+
+tcc_inline
+  warn_code => 1,
+  q{
+    SV *
+    foo3(pTHX_ SV *sv)
+    {
+      return sv_2mortal(newSViv(SvIV(sv)+1));
+    }
+  };
+
+pass("Alive after compilation");
+is(foo3(5), 6, "simple function with pTHX works");
 
 pass("Alive");
 

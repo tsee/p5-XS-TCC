@@ -14,8 +14,14 @@ SCOPE: {
 
 pass("Alive");
 
-SCOPE: {
+sub make_comp {
   my $comp = XS::TCC::TCCState->new;
+  $comp->add_sysinclude_path($XS::TCC::RuntimeIncludeDir);
+  $comp->set_lib_path($XS::TCC::RuntimeIncludeDir);
+  return $comp;
+}
+SCOPE: {
+  my $comp = make_comp();
   my $i = $comp->compile_string("");
   is($i, 0);
 
@@ -31,7 +37,7 @@ HERE
 }
 
 SCOPE: {
-  my $comp = XS::TCC::TCCState->new;
+  my $comp = make_comp();
   $comp->set_options($XS::TCC::CCOPTS);
 
   is($comp->compile_string(<<'HERE'), 0, "Real XS example compiles");
@@ -68,7 +74,7 @@ HERE
 pass("Alive");
 
 SCOPE: {
-  my $comp = XS::TCC::TCCState->new;
+  my $comp = make_comp();
   $comp->set_options($XS::TCC::CCOPTS);
   my $callback_count = 0;
   my $errstr;

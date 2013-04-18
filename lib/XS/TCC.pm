@@ -13,6 +13,9 @@ use ExtUtils::Embed ();
 use ExtUtils::Typemaps;
 use ExtUtils::ParseXS::Eval;
 use File::Spec;
+use File::ShareDir;
+
+our $RuntimeIncludeDir = File::ShareDir::dist_dir('XS-TCC');
 
 use XS::TCC::Parser;
 
@@ -103,6 +106,8 @@ SCOPE: {
   sub _get_compiler {
     #return $compiler if $compiler;
     my $compiler = XS::TCC::TCCState->new;
+    $compiler->set_lib_path($RuntimeIncludeDir);
+    $compiler->add_sysinclude_path($RuntimeIncludeDir);
     push @compilers, $compiler;
     return $compiler;
   } # end _get_compiler

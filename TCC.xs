@@ -131,6 +131,22 @@ set_options(xstcc_state *self, const char *opt)
   OUTPUT: RETVAL
 
 void
+set_lib_path(xstcc_state *self, const char *path)
+  CODE:
+    tcc_set_lib_path(self->tccstate, path);
+
+int
+add_sysinclude_path(xstcc_state *self, const char *path)
+  ALIAS:
+    add_include_path = 1
+  CODE:
+    if (ix == 0)
+      RETVAL = tcc_add_sysinclude_path(self->tccstate, path);
+    else
+      RETVAL = tcc_add_include_path(self->tccstate, path);
+  OUTPUT: RETVAL
+
+void
 set_error_callback(xstcc_state *self, CV *callback)
   CODE:
     SvREFCNT_inc(callback);

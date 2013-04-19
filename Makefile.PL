@@ -98,8 +98,6 @@ sub MY::postamble {
     push @ret, <<HERE;
 \$(MYEXTLIB):
 	cd $tcc_source_location && \$(SHELL) ./configure --extra-cflags='$extra' && \$(MAKE)
-	\$(CP) $tcc_source_location/libtcc1$Config{lib_ext} share
-	\$(CP) $tcc_source_location/include/tcclib.h share
 	\$(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({\@ARGV}, '\\''\$(INST_LIB)'\\'')' -- \\
 HERE
     foreach my $if (0..$#tcc_runtime_files) {
@@ -111,7 +109,7 @@ HERE
     push @ret, <<HERE;
 
 clean ::
-	cd $tcc_source_location && \$(MAKE) clean
+	cd $tcc_source_location && \$(MAKE) clean && \$(RM) config.h config.mak
 
 HERE
   }

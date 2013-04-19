@@ -273,6 +273,7 @@ FUN_HEADER
   for my $argno (0..$#{$fun_info->{arg_names}}) {
     my $aname = $fun_info->{arg_names}[$argno];
     my $atype = $fun_info->{arg_types}[$argno];
+    (my $decl_type = $atype) =~ s/^\s*const\b\s*//;
 
     my $tm = $typemap->get_typemap(ctype => $atype);
     my $im = !$tm ? undef : $typemap->get_inputmap(xstype => $tm->xstype);
@@ -287,8 +288,8 @@ FUN_HEADER
       func_name => $cfun_name,
       Full_func_name => $cfun_name,
       pname => $package . "::" . $cfun_name,
-      type => $atype,
-      ntype => $atype,
+      type => $decl_type,
+      ntype => $decl_type,
       arg => "ST($argno)",
       var => $aname,
       init => undef,
@@ -305,10 +306,10 @@ FUN_HEADER
 
     $out =~ s/;\s*$//;
     if ($out =~ /^\s*\Q$aname\E\s*=/) {
-      push @input_decl, "    $atype $out;";
+      push @input_decl, "    $decl_type $out;";
     }
     else {
-      push @input_decl, "    $atype $aname;";
+      push @input_decl, "    $decl_type $aname;";
       push @input_assign, "    $out;";
     }
   }

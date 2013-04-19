@@ -213,8 +213,16 @@ get_symbol(xstcc_state *self, const char *name)
 
 int
 relocate(xstcc_state *self)
+  PREINIT:
+    AV *outav;
+    SV *memsv;
+    size_t memsize;
   CODE:
-    RETVAL = tcc_relocate(self->tccstate, TCC_RELOCATE_AUTO);
+    outav = get_av("XS::TCC::TCCState::_output_memory", GV_ADD);
+    memsize = tcc_relocate(self->tccstate, NULL);
+    memsv = newSV(memsize);
+    av_push(outav, memsv);
+    RETVAL = tcc_relocate(self->tccstate, SvPVX(memsv));
   OUTPUT: RETVAL
 
 MODULE = XS::TCC        PACKAGE = XS::TCC::TCCSymbol

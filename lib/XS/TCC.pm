@@ -121,7 +121,7 @@ SCOPE: {
     my $compiler = XS::TCC::TCCState->new;
     $compiler->set_lib_path($RuntimeIncludeDir);
     $compiler->add_sysinclude_path($RuntimeIncludeDir);
-    push @compilers, $compiler;
+    #push @compilers, $compiler;
     return $compiler;
   } # end _get_compiler
 } # end SCOPE

@@ -47,6 +47,10 @@ if ($do_build_tcc) {
     push @tcc_runtime_files, File::Spec->catfile($tcc_source_location, "libtcc1$Config{lib_ext}");
 # TODO should we always ship a libtcc1.a? I think so. So code to find it if not building tcc...
 }
+else {
+    @tcc_runtime_files = glob(File::Spec->catfile($tcc_include_location, "*"));
+    push @tcc_runtime_files, File::Spec->catfile($tcc_static_lib_location, "libtcc1$Config{lib_ext}");
+}
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
@@ -97,7 +101,16 @@ sub MY::postamble {
         push @ret, <<HERE;
 \$(MYEXTLIB):
 	cd $tcc_source_location && \$(SHELL) ./configure --extra-cflags='$extra' && \$(MAKE)
-	\$(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({\@ARGV}, '\\''\$(INST_LIB)'\\'')' -- \\
+
+clean ::
+	cd $tcc_source_location && \$(MAKE) clean && \$(RM) config.h config.mak
+
+HERE
+    }
+    push @ret, <<HERE;
+
+subdirs ::
+	\$(NOECHO) \$(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({\@ARGV}, '\\''\$(INST_LIB)'\\'')' -- \\
 HERE
         foreach my $if (0..$#tcc_runtime_files) {
             my $f = $tcc_runtime_files[$if];
@@ -105,13 +118,7 @@ HERE
             push @ret, "\t  $f \$(INST_LIB)/auto/share/dist/\$(DISTNAME)/$name"
               . ($if != $#tcc_runtime_files ? " \\\n" : "\n");
         }
-        push @ret, <<HERE;
-
-clean ::
-	cd $tcc_source_location && \$(MAKE) clean && \$(RM) config.h config.mak
-
-HERE
-    }
+        push @ret, "\n";
     return join "", @ret;
 }
 

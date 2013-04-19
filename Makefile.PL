@@ -22,9 +22,9 @@ GetOptions(
 
 my $do_build_tcc = $tcc_static_lib_location eq '' ? 1 : 0;
 $tcc_include_location = File::Spec->catdir($tcc_source_location)
-  if $tcc_include_location eq '';
+    if $tcc_include_location eq '';
 $tcc_static_lib_location = File::Spec->catfile($tcc_source_location, 'libtcc' . $Config{lib_ext})
-  if $tcc_static_lib_location eq '';
+    if $tcc_static_lib_location eq '';
 
 
 our $OPTIMIZE;
@@ -43,9 +43,8 @@ if ($debug) {
 
 my @tcc_runtime_files;
 if ($do_build_tcc) {
-  @tcc_runtime_files = glob(File::Spec->catfile($tcc_source_location, "include", "*"));
-  push @tcc_runtime_files, File::Spec->catfile($tcc_source_location, "libtcc1$Config{lib_ext}");
-# TODO write code to use shipped libtcc1.a
+    @tcc_runtime_files = glob(File::Spec->catfile($tcc_source_location, "include", "*"));
+    push @tcc_runtime_files, File::Spec->catfile($tcc_source_location, "libtcc1$Config{lib_ext}");
 # TODO should we always ship a libtcc1.a? I think so. So code to find it if not building tcc...
 }
 
@@ -91,29 +90,29 @@ WriteMakefile1(
 );
 
 sub MY::postamble {
-  my $self = shift;
-  my @ret;
-  if ($do_build_tcc) {
-    my $extra = join " ", $Config{ccflags}, $Config{cccdlflags};
-    push @ret, <<HERE;
+    my $self = shift;
+    my @ret;
+    if ($do_build_tcc) {
+        my $extra = join " ", $Config{ccflags}, $Config{cccdlflags};
+        push @ret, <<HERE;
 \$(MYEXTLIB):
 	cd $tcc_source_location && \$(SHELL) ./configure --extra-cflags='$extra' && \$(MAKE)
 	\$(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({\@ARGV}, '\\''\$(INST_LIB)'\\'')' -- \\
 HERE
-    foreach my $if (0..$#tcc_runtime_files) {
-      my $f = $tcc_runtime_files[$if];
-      my $name = fileparse($f);
-      push @ret, "\t  $f \$(INST_LIB)/auto/share/dist/\$(DISTNAME)/$name"
-        . ($if != $#tcc_runtime_files ? " \\\n" : "\n");
-    }
-    push @ret, <<HERE;
+        foreach my $if (0..$#tcc_runtime_files) {
+            my $f = $tcc_runtime_files[$if];
+            my $name = fileparse($f);
+            push @ret, "\t  $f \$(INST_LIB)/auto/share/dist/\$(DISTNAME)/$name"
+              . ($if != $#tcc_runtime_files ? " \\\n" : "\n");
+        }
+        push @ret, <<HERE;
 
 clean ::
 	cd $tcc_source_location && \$(MAKE) clean && \$(RM) config.h config.mak
 
 HERE
-  }
-  return join "", @ret;
+    }
+    return join "", @ret;
 }
 
 

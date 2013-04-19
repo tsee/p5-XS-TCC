@@ -5,6 +5,14 @@ use warnings;
 
 our $VERSION = '0.01';
 
+use constant {
+  TCC_OUTPUT_MEMORY     => 0,
+  TCC_OUTPUT_EXE        => 1,
+  TCC_OUTPUT_DLL        => 2,
+  TCC_OUTPUT_OBJ        => 3,
+  TCC_OUTPUT_PREPROCESS => 4,
+};
+
 use Carp ();
 use Exporter 'import';
 use XSLoader;
@@ -23,6 +31,11 @@ XSLoader::load('XS::TCC', $VERSION);
 
 our @EXPORT_OK = qw(
   tcc_inline
+  TCC_OUTPUT_MEMORY
+  TCC_OUTPUT_EXE
+  TCC_OUTPUT_DLL
+  TCC_OUTPUT_OBJ
+  TCC_OUTPUT_PREPROCESS
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 

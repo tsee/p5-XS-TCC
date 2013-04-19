@@ -83,7 +83,7 @@ new(const char *CLASS)
 #ifdef PERL_IMPLICIT_CONTEXT
     RETVAL->perl_thread_context = aTHX;
 #endif
-    /* for now, always set output type to memory */
+    /* for now, always set output type to memory by default */
     tcc_set_output_type(RETVAL->tccstate, TCC_OUTPUT_MEMORY);
     /* croaks by default */
     tcc_set_error_func(RETVAL->tccstate, (void *)RETVAL, xstcc_error_func);
@@ -96,6 +96,51 @@ DESTROY(xstcc_state *self)
     SvREFCNT_dec(self->error_callback); /* has a NULL check */
     Safefree(self);
 
+void
+set_lib_path(xstcc_state *self, const char *path)
+  CODE:
+    tcc_set_lib_path(self->tccstate, path);
+
+void
+set_error_callback(xstcc_state *self, CV *callback)
+  CODE:
+    SvREFCNT_inc(callback);
+    SvREFCNT_dec(self->error_callback); /* includes NULL check */
+    self->error_callback = callback;
+
+int
+set_options(xstcc_state *self, const char *opt)
+  CODE:
+    RETVAL = tcc_set_options(self->tccstate, opt);
+  OUTPUT: RETVAL
+
+int
+add_sysinclude_path(xstcc_state *self, const char *path)
+  ALIAS:
+    add_include_path = 1
+  CODE:
+    if (ix == 0)
+      RETVAL = tcc_add_sysinclude_path(self->tccstate, path);
+    else
+      RETVAL = tcc_add_include_path(self->tccstate, path);
+  OUTPUT: RETVAL
+
+void
+define_symbol(xstcc_state *self, const char *sym, const char *value)
+  CODE:
+    tcc_define_symbol(self->tccstate, sym, value);
+
+void
+undefine_symbol(xstcc_state *self, const char *sym)
+  CODE:
+    tcc_undefine_symbol(self->tccstate, sym);
+
+int
+add_file(xstcc_state *self, const char *filename)
+  CODE:
+    RETVAL = tcc_add_file(self->tccstate, filename);
+  OUTPUT: RETVAL
+
 int
 compile_string(xstcc_state *self, SV *code)
   PREINIT:
@@ -104,6 +149,54 @@ compile_string(xstcc_state *self, SV *code)
   CODE:
     cstr = SvPV(code, len);
     RETVAL = tcc_compile_string(self->tccstate, cstr);
+  OUTPUT: RETVAL
+
+int
+set_output_type(xstcc_state *self, int output_type);
+  CODE:
+    RETVAL = tcc_set_output_type(self->tccstate, output_type);
+  OUTPUT: RETVAL
+
+int
+add_library_path(xstcc_state *self, const char *pathname)
+  CODE:
+    RETVAL = tcc_add_library_path(self->tccstate, pathname);
+  OUTPUT: RETVAL
+
+int
+add_library(xstcc_state *self, const char *libname)
+  CODE:
+    RETVAL = tcc_add_library(self->tccstate, libname);
+  OUTPUT: RETVAL
+
+int
+add_symbol(xstcc_state *self, const char *name, const char *value)
+  CODE:
+    RETVAL = tcc_add_symbol(self->tccstate, name, value);
+  OUTPUT: RETVAL
+
+int
+output_file(xstcc_state *self, const char *filename)
+  CODE:
+    RETVAL = tcc_output_file(self->tccstate, filename);
+  OUTPUT: RETVAL
+
+int
+run(xstcc_state *self, int argc, AV *argv)
+  PREINIT:
+    unsigned int avlen, i;
+    SV **elem;
+    char **str_argv;
+    SV *argv_ctrl;
+  CODE:
+    avlen = av_len(argv)+1;
+    argv_ctrl = sv_2mortal(newSV(avlen * sizeof(char *)));
+    str_argv = (char **)argv_ctrl;
+    for (i = 0; i < avlen; ++i) {
+      elem = av_fetch(argv, i, 0);
+      str_argv[i] = SvPV_nolen(*elem);
+    }
+    RETVAL = tcc_run(self->tccstate, argc, str_argv);
   OUTPUT: RETVAL
 
 xstcc_symbol *
@@ -123,35 +216,6 @@ relocate(xstcc_state *self)
   CODE:
     RETVAL = tcc_relocate(self->tccstate, TCC_RELOCATE_AUTO);
   OUTPUT: RETVAL
-
-int
-set_options(xstcc_state *self, const char *opt)
-  CODE:
-    RETVAL = tcc_set_options(self->tccstate, opt);
-  OUTPUT: RETVAL
-
-void
-set_lib_path(xstcc_state *self, const char *path)
-  CODE:
-    tcc_set_lib_path(self->tccstate, path);
-
-int
-add_sysinclude_path(xstcc_state *self, const char *path)
-  ALIAS:
-    add_include_path = 1
-  CODE:
-    if (ix == 0)
-      RETVAL = tcc_add_sysinclude_path(self->tccstate, path);
-    else
-      RETVAL = tcc_add_include_path(self->tccstate, path);
-  OUTPUT: RETVAL
-
-void
-set_error_callback(xstcc_state *self, CV *callback)
-  CODE:
-    SvREFCNT_inc(callback);
-    SvREFCNT_dec(self->error_callback); /* includes NULL check */
-    self->error_callback = callback;
 
 MODULE = XS::TCC        PACKAGE = XS::TCC::TCCSymbol
 

@@ -10,17 +10,19 @@ use blib;
 use Benchmark::Dumb qw(cmpthese);
 use XS::TCC qw(tcc_inline);
 
-tcc_inline q{
-  double tcc_math(int n) {
-    int i, j;
-    double res = 0;
-    for (i = 0; i < n; ++i) {
-      for (j = 0; j < n; ++j)
-        res += i / (double)(j == 0 ? 1 : j);
+tcc_inline
+  typemap => "const int    T_IV",
+  q{
+    double tcc_math(const int n) {
+      int i, j;
+      double res = 0;
+      for (i = 0; i < n; ++i) {
+        for (j = 0; j < n; ++j)
+          res += i / (double)(j == 0 ? 1 : j);
+      }
+      return res;
     }
-    return res;
-  }
-};
+  };
 
 sub perl_math {
   my $n = shift;

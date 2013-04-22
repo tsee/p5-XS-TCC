@@ -45,7 +45,6 @@ my @tcc_runtime_files;
 if ($do_build_tcc) {
     @tcc_runtime_files = glob(File::Spec->catfile($tcc_source_location, "include", "*"));
     push @tcc_runtime_files, File::Spec->catfile($tcc_source_location, "libtcc1$Config{lib_ext}");
-# TODO should we always ship a libtcc1.a? I think so. So code to find it if not building tcc...
 }
 else {
     @tcc_runtime_files = glob(File::Spec->catfile($tcc_include_location, "*"));

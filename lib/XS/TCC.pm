@@ -262,9 +262,8 @@ sub _gen_single_function_xs_wrapper {
   my $out_typemap;
   my $outputmap;
   my $dxstarg = "";
-  if (not $is_void_function
-      and ($out_typemap = $typemap->get_typemap(ctype => $ret_type)))
-  {
+  if (not $is_void_function) {
+    $out_typemap = $typemap->get_typemap(ctype => $ret_type);
     $outputmap = $out_typemap
                  ? $typemap->get_outputmap(xstype => $out_typemap->xstype)
                  : undef;

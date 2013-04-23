@@ -457,10 +457,18 @@ Steffen Mueller E<lt>smueller@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
+This package includes a copy of the TCC sources. The TCC sources are
+
+Copyright (C) Fabrice Bellard.
+
+  TCC is distributed under the GNU Lesser General Public License
+  (see COPYING file).
+
+The rest of the code is
+
 Copyright (C) 2013 by Steffen Mueller
 
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.8 or,
-at your option, any later version of Perl 5 you may have available.
+  XS::TCC is distributed under the GNU Lesser General Public License
+  (see COPYING file).
 
 =cut

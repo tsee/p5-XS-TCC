@@ -2,7 +2,10 @@ use strict;
 use warnings;
 
 use Test::More;
+use File::Spec;
 use XS::TCC qw(:all);
+
+my $data_dir = -d 't' ? File::Spec->catdir(qw(t data)) : 'data';
 
 tcc_inline <<HERE;
 HERE
@@ -89,8 +92,26 @@ tcc_inline
   };
 
 pass("Alive after compilation");
+
 is(foo3(5), 6, "simple function with pTHX works");
 
 pass("Alive");
+
+################################################################################
+
+tcc_inline
+  add_files => File::Spec->catfile($data_dir, 'inctest.c'),
+  q{
+    int wrapper(int input) {
+      return mydbl(input);
+    }
+  };
+
+pass("Alive after compilation");
+
+is(wrapper(5), 10, "add_files works for C file");
+
+pass("Alive");
+
 
 done_testing();

@@ -153,6 +153,9 @@ SCOPE: {
 } # end SCOPE
 
 
+
+# current options:
+# code, warn_code, package, typemap, add_files
 sub tcc_inline (@) {
   my $code;
 
@@ -207,6 +210,12 @@ sub tcc_inline (@) {
   my $err_hook = sub { $errmsg = $_[0] };
 
   $compiler->set_error_callback($err_hook);
+
+  # Add user-specified files
+  my @add_files;
+  @add_files = ref($args{add_files}) ? @{$args{add_files}} : $args{add_files}
+    if defined $args{add_files};
+  $compiler->add_file($_) for @add_files;
 
   # Do the compilation
   $compiler->set_options(($args{ccopts} // $CCOPTS));

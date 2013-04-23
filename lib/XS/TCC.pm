@@ -245,16 +245,34 @@ sub _gen_single_function_xs_wrapper {
   my $nparams = scalar(@$arg_names);
   my $arg_names_str = join ", ", map {s/\W/_/; $_} @$arg_names;
 
+  # Return type and output typemap preparation
   my $ret_type = $fun_info->{return_type};
   my $is_void_function = $ret_type eq 'void';
   my $retval_decl = $is_void_function ? '' : "$ret_type RETVAL;";
+
+  my $out_typemap;
+  my $outputmap;
+  my $dxstarg = "";
+  if (not $is_void_function
+      and ($out_typemap = $typemap->get_typemap(ctype => $ret_type)))
+  {
+    $outputmap = $out_typemap
+                 ? $typemap->get_outputmap(xstype => $out_typemap->xstype)
+                 : undef;
+    Carp::croak("No output typemap found for return type '$ret_type'")
+      if not $outputmap;
+    # TODO implement TARG optimization below
+    #$dxstarg = $outputmap->targetable ? " dXSTARG;" : "";
+  }
+
+  # Emit function header and declarations
   (my $xs_pkg_name = $package) =~ s/:+/_/g;
   my $xs_fun_name = "XS_${xs_pkg_name}_$cfun_name";
   push @$code_ary, <<FUN_HEADER;
 XS_EXTERNAL($xs_fun_name); /* prototype to pass -Wmissing-prototypes */
 XS_EXTERNAL($xs_fun_name)
 {
-  dVAR; dXSARGS;
+  dVAR; dXSARGS;$dxstarg
   if (items != $nparams)
     croak_xs_usage(cv,  "$arg_names_str");
   /* PERL_UNUSED_VAR(ax); */ /* -Wall */
@@ -327,13 +345,7 @@ FUN_HEADER
 
   # emit output typemap
   if (not $is_void_function) {
-    my $tm = $typemap->get_typemap(ctype => $ret_type);
-
-    my $om = !$tm ? undef : $typemap->get_outputmap(xstype => $tm->xstype);
-    Carp::croak("No output typemap found for return type '$ret_type'")
-      if not $om;
-
-    my $omcode = $om->cleaned_code;
+    my $omcode = $outputmap->cleaned_code;
     my $vars = {
       Package => $package,
       ALIAS => $cfun_name,

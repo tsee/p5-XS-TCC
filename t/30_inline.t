@@ -107,7 +107,7 @@ tcc_inline
     }
   };
 
-pass("Alive after compilation");
+pass("Alive after compilation (add_file inctest.c)");
 
 is(wrapper(5), 10, "add_files works for C file");
 

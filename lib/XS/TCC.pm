@@ -155,7 +155,7 @@ SCOPE: {
 
 
 # current options:
-# code, warn_code, package, typemap, add_files
+# code, warn_code, package, typemap, add_files, ccopts
 sub tcc_inline (@) {
   my $code;
 

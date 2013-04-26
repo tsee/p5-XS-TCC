@@ -50,6 +50,7 @@ else {
     @tcc_runtime_files = glob(File::Spec->catfile($tcc_include_location, "*"));
     push @tcc_runtime_files, File::Spec->catfile($tcc_static_lib_location, "libtcc1$Config{lib_ext}");
 }
+push @tcc_runtime_files, 'typemap_func.h';
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.

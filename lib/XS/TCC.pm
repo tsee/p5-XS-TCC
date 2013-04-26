@@ -25,6 +25,7 @@ use File::ShareDir;
 
 our $RuntimeIncludeDir = File::ShareDir::dist_dir('XS-TCC');
 
+use XS::TCC::Typemaps;
 use XS::TCC::Parser;
 
 XSLoader::load('XS::TCC', $VERSION);
@@ -49,6 +50,8 @@ my $CodeHeader = <<'HERE';
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
+
+#include <typemap_func.h>
 
 /* The XS_EXTERNAL macro is used for functions that must not be static
  * like the boot XSUB of a module. If perl didn't have an XS_EXTERNAL
@@ -147,6 +150,10 @@ SCOPE: {
 
       $core_typemap->merge(file => $typemap_loc, replace => 1);
     }
+
+    # Override core typemaps with custom function-based replacements.
+    # This is because GCC compiled functions are likely faster than inlined code in TCC.
+    $core_typemap->merge(replace => 1, typemap => $XS::TCC::Typemaps::Typemap);
 
     return $core_typemap;
   } # end _get_core_typemap

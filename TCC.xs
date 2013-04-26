@@ -15,6 +15,9 @@
 
 #include <libtcc.h>
 
+/* functions to be called by core typemap reimplementations */
+#include "typemap_func.h"
+
 typedef void xstcc_symbol;
 
 typedef struct {

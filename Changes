@@ -1,5 +1,8 @@
 Revision history for Perl extension XS::TCC.
 
+0.02  Thu Aug 22 07:23:00 2013
+  - Fixed dependencies in Makefile.PL (Tokuhiro Matsuno)
+
 0.01  Mon Apr  8 19:09:00 2013
   - original version
 

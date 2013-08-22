@@ -68,7 +68,8 @@ WriteMakefile1(
     VERSION_FROM      => 'lib/XS/TCC.pm', # finds $VERSION
     PREREQ_PM         => {
         'XSLoader' => 0,
-        'ExtUtils::Typemaps' => '0.18_01',
+        'ExtUtils::ParseXS' => '3.21',
+        'ExtUtils::Typemaps' => '3.21',
         'ExtUtils::Embed' => 0,
         'File::Spec' => 0,
         'File::ShareDir' => 0,

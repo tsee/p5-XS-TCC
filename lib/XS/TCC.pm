@@ -47,6 +47,13 @@ my $CodeHeader = <<'HERE';
 #define XS_TCC_INIT
 /* #define PERL_NO_GET_CONTEXT */
 
+#ifdef __XS_TCC_DARWIN__
+/* http://comments.gmane.org/gmane.comp.compilers.tinycc.devel/325 */
+typedef unsigned short __uint16_t, uint16_t;
+typedef unsigned int __uint32_t, uint32_t;
+typedef unsigned long __uint64_t, uint64_t;
+#endif
+
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
@@ -124,6 +131,9 @@ SCOPE: {
     my $compiler = XS::TCC::TCCState->new;
     $compiler->set_lib_path($RuntimeIncludeDir);
     $compiler->add_sysinclude_path($RuntimeIncludeDir);
+    if ($^O eq 'darwin') {
+        $compiler->define_symbol("__XS_TCC_DARWIN__", 1);
+    }
     #push @compilers, $compiler;
     return $compiler;
   } # end _get_compiler
@@ -158,8 +168,6 @@ SCOPE: {
     return $core_typemap;
   } # end _get_core_typemap
 } # end SCOPE
-
-
 
 # current options:
 # code, warn_code, package, typemap, add_files, ccopts
@@ -231,7 +239,12 @@ sub tcc_inline (@) {
 
   if (defined $errmsg) {
     $errmsg = _build_compile_error_msg($errmsg, 1);
-    Carp::croak($errmsg);
+    # libtcc does not provide a way to determine errors and warnings.
+    if ($errmsg =~ /error: /) {
+      Carp::croak($errmsg);
+    } else {
+      Carp::carp($errmsg);
+    }
   }
 
   # install the XSUBs

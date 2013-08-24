@@ -46,8 +46,17 @@ xstcc_error_func(void *opaque, const char *msg)
 
     call_sv((SV *)state->error_callback, G_DISCARD);
   }
-  else
-    croak("%s", msg);
+  else {
+    /*
+     * libtcc does not provide a way to determine errors and warnings.
+     */
+    if (strstr(msg, "error: ")) {
+      croak("%s", msg);
+    }
+    else {
+      warn("%s", msg);
+    }
+  }
 }
 
 MODULE = XS::TCC        PACKAGE = XS::TCC

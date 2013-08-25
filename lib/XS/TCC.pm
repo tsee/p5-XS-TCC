@@ -234,13 +234,13 @@ sub tcc_inline (@) {
 
   # Do the compilation
   $compiler->set_options(($args{ccopts} // $CCOPTS));
-  $compiler->compile_string($final_code);
+  # compile_string() returns 0 if succeeded, -1 otherwise.
+  my $fatal = $compiler->compile_string($final_code);
   $compiler->relocate();
 
   if (defined $errmsg) {
     $errmsg = _build_compile_error_msg($errmsg, 1);
-    # libtcc does not provide a way to determine errors and warnings.
-    if ($errmsg =~ /error: /) {
+    if ($fatal) {
       Carp::croak($errmsg);
     } else {
       Carp::carp($errmsg);

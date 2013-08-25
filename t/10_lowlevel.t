@@ -39,8 +39,18 @@ HERE
 SCOPE: {
   my $comp = make_comp();
   $comp->set_options($XS::TCC::CCOPTS);
+  if ($^O eq 'darwin') {
+    $comp->define_symbol("__XS_TCC_DARWIN__", 1);
+  }
 
   is($comp->compile_string(<<'HERE'), 0, "Real XS example compiles");
+#ifdef __XS_TCC_DARWIN__
+/* http://comments.gmane.org/gmane.comp.compilers.tinycc.devel/325 */
+typedef unsigned short __uint16_t, uint16_t;
+typedef unsigned int __uint32_t, uint32_t;
+typedef unsigned long __uint64_t, uint64_t;
+#endif
+
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
@@ -95,7 +105,7 @@ xs_tcc_test_bar(pTHX_ CV *cv)
 }
 HERE
 
-  is($callback_count, 1, "error callback called");
+  cmp_ok($callback_count, '>', 1, "error callback called");
   ok(defined($errstr), "error string defined");
   note("Compile error is: '$errstr'");
 }

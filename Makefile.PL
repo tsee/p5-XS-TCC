@@ -8,23 +8,13 @@ use Config qw(%Config);
 use Getopt::Long qw(GetOptions);
 use Cwd qw(cwd);
 use File::Basename qw(fileparse);
+use Alien::TinyCC;
 
 my $debug = $ENV{DEBUG};
-my $tcc_static_lib_location = '';
-my $tcc_include_location = '';
-my $tcc_source_location = 'tcc-0.9.26';
 
 GetOptions(
     'debug|d' => \$debug,
-    'tcc_static_lib_location=s' => \$tcc_static_lib_location,
-    'tcc_include_location=s' => \$tcc_include_location,
 );
-
-my $do_build_tcc = $tcc_static_lib_location eq '' ? 1 : 0;
-$tcc_include_location = File::Spec->catdir($tcc_source_location)
-    if $tcc_include_location eq '';
-$tcc_static_lib_location = File::Spec->catfile($tcc_source_location, 'libtcc' . $Config{lib_ext})
-    if $tcc_static_lib_location eq '';
 
 
 our $OPTIMIZE;
@@ -42,14 +32,6 @@ if ($debug) {
 }
 
 my @tcc_runtime_files;
-if ($do_build_tcc) {
-    @tcc_runtime_files = glob(File::Spec->catfile($tcc_source_location, "include", "*"));
-    push @tcc_runtime_files, File::Spec->catfile($tcc_source_location, "libtcc1$Config{lib_ext}");
-}
-else {
-    @tcc_runtime_files = glob(File::Spec->catfile($tcc_include_location, "*"));
-    push @tcc_runtime_files, File::Spec->catfile($tcc_static_lib_location, "libtcc1$Config{lib_ext}");
-}
 push @tcc_runtime_files, 'typemap_func.h';
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
@@ -77,9 +59,9 @@ WriteMakefile1(
     LICENSE => 'perl',
     ABSTRACT_FROM => 'lib/XS/TCC.pm',
     AUTHOR => 'Steffen Mueller <smueller@cpan.org>',
-    #LIBS              => ['-Ltcc-install/lib', '-ltcc'], # e.g., '-lm'
+    LIBS              => ['-L' . Alien::TinyCC->libtcc_library_path, '-ltcc'], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
-    INC               => '-I. -I' . $tcc_include_location,
+    INC               => '-I. -I' . Alien::TinyCC->libtcc_include_path,
     OPTIMIZE          => $OPTIMIZE,
     # Un-comment this if you add C files to link with later:
     OBJECT            => '$(O_FILES)', # link all the C files too
@@ -89,34 +71,23 @@ WriteMakefile1(
             'Cwd' => 0,
             'File::Spec' => 0,
             'File::Basename' => 0,
+            'Alien::TinyCC' => '0.03',
         },
     },
-    ($do_build_tcc ? (MYEXTLIB => $tcc_static_lib_location) : ()),
 );
 
 sub MY::postamble {
     my $self = shift;
     my @ret;
-    if ($do_build_tcc) {
-        my $extra = join " ", $Config{ccflags}, $Config{cccdlflags};
-        push @ret, <<HERE;
-\$(MYEXTLIB):
-	cd $tcc_source_location && \$(SHELL) ./configure --extra-cflags='$extra' && \$(MAKE)
-
-clean ::
-	cd $tcc_source_location && \$(MAKE) clean && \$(RM) config.h config.mak
-
-HERE
-    }
     push @ret, <<HERE;
 
-subdirs ::
-	\$(NOECHO) \$(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({\@ARGV}, '\\''\$(INST_LIB)'\\'')' -- \\
+pm_to_blib :
+	\$(MKPATH) \$(INST_LIB)/auto/share/dist/\$(DISTNAME)
 HERE
         foreach my $if (0..$#tcc_runtime_files) {
             my $f = $tcc_runtime_files[$if];
             my $name = fileparse($f);
-            push @ret, "\t  $f \$(INST_LIB)/auto/share/dist/\$(DISTNAME)/$name"
+            push @ret, "\t\$(CP)  $f \$(INST_LIB)/auto/share/dist/\$(DISTNAME)/$name"
               . ($if != $#tcc_runtime_files ? " \\\n" : "\n");
         }
         push @ret, "\n";

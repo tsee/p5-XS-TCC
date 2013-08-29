@@ -3,7 +3,7 @@ use 5.10.1;
 use strict;
 use warnings;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use constant {
   TCC_OUTPUT_MEMORY     => 0,
@@ -470,6 +470,10 @@ but both beat regular Perl by a wide margin {citation required}.
 
 =over
 
+=item * L<Alien::TinyCC>
+
+=item * L<C::TinyCompiler>
+
 =item * L<C::TCC>
 
 =item * L<Inline> and L<Inline::C>
@@ -482,16 +486,13 @@ but both beat regular Perl by a wide margin {citation required}.
 
 Steffen Mueller E<lt>smueller@cpan.orgE<gt>
 
+With much appreciated contributions from:
+
+Tokuhiro Matsuno
+
+David Mertens
+
 =head1 COPYRIGHT AND LICENSE
-
-This package includes a copy of the TCC sources. The TCC sources are
-
-Copyright (C) Fabrice Bellard.
-
-  TCC is distributed under the GNU Lesser General Public License
-  (see COPYING file).
-
-The rest of the code is
 
 Copyright (C) 2013 by Steffen Mueller
 

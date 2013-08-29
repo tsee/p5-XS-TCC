@@ -1,5 +1,13 @@
 Revision history for Perl extension XS::TCC.
 
+0.03  Thu Aug 29 19:18:00 2013
+  - OSX build fixes (Tokuhiro Matsuno)
+  - Use Alien::TinyCC for a tcc copy instead of shipping sources!
+    (With much help from David Mertens)
+  - Better warnings/error handling (distinguishing the two)
+    (Tokuhiro Matsuno)
+  - Fix XS::TCC when under -e (also indirectly)
+
 0.02  Thu Aug 22 07:23:00 2013
   - Fixed dependencies in Makefile.PL (Tokuhiro Matsuno)
 

@@ -40,7 +40,11 @@ our @EXPORT_OK = qw(
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
-our $CCOPTS = ExtUtils::Embed::ccopts;
+our $CCOPTS;
+{
+  local $0 = "NOT A -e LINE!"; # ExtUtils::Embed is daft
+  $CCOPTS = ExtUtils::Embed::ccopts;
+}
 
 my $CodeHeader = <<'HERE';
 #ifndef XS_TCC_INIT

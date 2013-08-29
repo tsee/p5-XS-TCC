@@ -16,8 +16,9 @@ pass("Alive");
 
 sub make_comp {
   my $comp = XS::TCC::TCCState->new;
+  $comp->set_lib_path($XS::TCC::TinyCCLibDir);
+  $comp->add_sysinclude_path($XS::TCC::TinyCCIncludeDir);
   $comp->add_sysinclude_path($XS::TCC::RuntimeIncludeDir);
-  $comp->set_lib_path($XS::TCC::RuntimeIncludeDir);
   return $comp;
 }
 SCOPE: {
@@ -105,7 +106,7 @@ xs_tcc_test_bar(pTHX_ CV *cv)
 }
 HERE
 
-  cmp_ok($callback_count, '>', 1, "error callback called");
+  cmp_ok($callback_count, '>=', 1, "error callback called");
   ok(defined($errstr), "error string defined");
   note("Compile error is: '$errstr'");
 }

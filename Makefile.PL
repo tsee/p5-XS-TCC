@@ -6,7 +6,6 @@ use warnings;
 use ExtUtils::MakeMaker;
 use Config qw(%Config);
 use Getopt::Long qw(GetOptions);
-use Cwd qw(cwd);
 use File::Basename qw(fileparse);
 use Alien::TinyCC;
 
@@ -59,12 +58,12 @@ WriteMakefile1(
     LICENSE => 'perl',
     ABSTRACT_FROM => 'lib/XS/TCC.pm',
     AUTHOR => 'Steffen Mueller <smueller@cpan.org>',
-    LIBS              => ['-L' . Alien::TinyCC->libtcc_library_path, '-ltcc'], # e.g., '-lm'
+    #LIBS              => ['-L' . , '-ltcc'], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
     INC               => '-I. -I' . Alien::TinyCC->libtcc_include_path,
     OPTIMIZE          => $OPTIMIZE,
     # Un-comment this if you add C files to link with later:
-    OBJECT            => '$(O_FILES)', # link all the C files too
+    OBJECT            => '$(O_FILES) ' . File::Spec->catdir(Alien::TinyCC->libtcc_library_path, 'libtcc'.$Config{lib_ext}), # link all the C files too
     META_MERGE => {
         configure_requires => {
             'Getopt::Long' => 0,
@@ -81,7 +80,7 @@ sub MY::postamble {
     my @ret;
     push @ret, <<HERE;
 
-pm_to_blib :
+pure_all ::
 	\$(MKPATH) \$(INST_LIB)/auto/share/dist/\$(DISTNAME)
 HERE
         foreach my $if (0..$#tcc_runtime_files) {

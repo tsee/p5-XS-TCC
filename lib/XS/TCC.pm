@@ -3,7 +3,7 @@ use 5.10.1;
 use strict;
 use warnings;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use constant {
   TCC_OUTPUT_MEMORY     => 0,
@@ -502,7 +502,7 @@ David Mertens
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2013 by Steffen Mueller
+Copyright (C) 2013, 2014 by Steffen Mueller
 
   XS::TCC is distributed under the GNU Lesser General Public License
   (see COPYING file).

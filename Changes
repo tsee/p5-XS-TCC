@@ -1,5 +1,9 @@
 Revision history for Perl extension XS::TCC.
 
+0.04  Tue Mar 18 08:00:00 2014
+  - Build/test fixes on recent Perls: Were accidentally seeing
+    gcc branch prediction hints.
+
 0.03  Thu Aug 29 19:18:00 2013
   - OSX build fixes (Tokuhiro Matsuno)
   - Use Alien::TinyCC for a tcc copy instead of shipping sources!

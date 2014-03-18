@@ -55,6 +55,13 @@ typedef unsigned long __uint64_t, uint64_t;
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
+#ifdef HAS_BUILTIN_EXPECT
+#  undef HAS_BUILTIN_EXPECT
+#  ifdef EXPECT
+#    undef EXPECT
+#    define EXPECT(expr, val) (expr)
+#  endif
+#endif
 
 void
 xs_tcc_test_bar(pTHX_ CV *cv)
@@ -96,6 +103,13 @@ SCOPE: {
   
   $comp->compile_string(<<'HERE');
 #include <EXTERN.h>
+#ifdef HAS_BUILTIN_EXPECT
+#  undef HAS_BUILTIN_EXPECT
+#  ifdef EXPECT
+#    undef EXPECT
+#    define EXPECT(expr, val) (expr)
+#  endif
+#endif
 #include <perl.h>
 #include <XSUB.h>
 

@@ -65,6 +65,14 @@ typedef unsigned long __uint64_t, uint64_t;
 #include <perl.h>
 #include <XSUB.h>
 
+#ifdef HAS_BUILTIN_EXPECT
+#  undef HAS_BUILTIN_EXPECT
+#  ifdef EXPECT
+#    undef EXPECT
+#    define EXPECT(expr, val) (expr)
+#  endif
+#endif
+
 #include <typemap_func.h>
 
 /* The XS_EXTERNAL macro is used for functions that must not be static

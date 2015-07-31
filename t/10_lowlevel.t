@@ -16,8 +16,6 @@ pass("Alive");
 
 sub make_comp {
   my $comp = XS::TCC::TCCState->new;
-  $comp->set_lib_path($XS::TCC::TinyCCLibDir);
-  $comp->add_sysinclude_path($XS::TCC::TinyCCIncludeDir);
   $comp->add_sysinclude_path($XS::TCC::RuntimeIncludeDir);
   return $comp;
 }

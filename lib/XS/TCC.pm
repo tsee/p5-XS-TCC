@@ -24,9 +24,8 @@ use File::Spec;
 use File::ShareDir;
 use Alien::TinyCC;
 
+# Needed for typemap_func.h:
 our $RuntimeIncludeDir = File::ShareDir::dist_dir('XS-TCC');
-our $TinyCCIncludeDir  = Alien::TinyCC->libtcc_include_path;
-our $TinyCCLibDir      = File::Spec->catdir( Alien::TinyCC->libtcc_library_path, 'tcc' );
 
 use XS::TCC::Typemaps;
 use XS::TCC::Parser;
@@ -143,8 +142,6 @@ SCOPE: {
   sub _get_compiler {
     #return $compiler if $compiler;
     my $compiler = XS::TCC::TCCState->new;
-    $compiler->set_lib_path($TinyCCLibDir);
-    $compiler->add_sysinclude_path($TinyCCIncludeDir);
     $compiler->add_sysinclude_path($RuntimeIncludeDir);
     if ($^O eq 'darwin') {
         $compiler->define_symbol("__XS_TCC_DARWIN__", 1);

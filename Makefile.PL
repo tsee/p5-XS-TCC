@@ -58,19 +58,18 @@ WriteMakefile1(
     LICENSE => 'perl',
     ABSTRACT_FROM => 'lib/XS/TCC.pm',
     AUTHOR => 'Steffen Mueller <smueller@cpan.org>',
-    #LIBS              => ['-L' . , '-ltcc'], # e.g., '-lm'
+    Alien::TinyCC->EUMM_LIBS,
+    Alien::TinyCC->EUMM_OBJECT,
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
     INC               => '-I. -I' . Alien::TinyCC->libtcc_include_path,
     OPTIMIZE          => $OPTIMIZE,
-    # Un-comment this if you add C files to link with later:
-    OBJECT            => '$(O_FILES) ' . File::Spec->catdir(Alien::TinyCC->libtcc_library_path, 'libtcc'.$Config{lib_ext}), # link all the C files too
     META_MERGE => {
         configure_requires => {
             'Getopt::Long' => 0,
             'Cwd' => 0,
             'File::Spec' => 0,
             'File::Basename' => 0,
-            'Alien::TinyCC' => '0.03',
+            'Alien::TinyCC' => '0.06',
         },
     },
 );

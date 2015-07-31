@@ -23,9 +23,11 @@ use ExtUtils::ParseXS::Eval;
 use File::Spec;
 use File::ShareDir;
 use Alien::TinyCC;
+use Config;
 
 # Needed for typemap_func.h:
 our $RuntimeIncludeDir = File::ShareDir::dist_dir('XS-TCC');
+our $PerlCoreDir = File::Spec->catfile($Config{archlib}, 'CORE');
 
 use XS::TCC::Typemaps;
 use XS::TCC::Parser;
@@ -58,6 +60,14 @@ my $CodeHeader = <<'HERE';
 typedef unsigned short __uint16_t, uint16_t;
 typedef unsigned int __uint32_t, uint32_t;
 typedef unsigned long __uint64_t, uint64_t;
+#endif
+
+#ifdef __XS_TCC_WIN__
+#define __C89_NAMELESS
+#define __MINGW_EXTENSION
+typedef long __int64;
+typedef int uid_t;
+typedef int gid_t;
 #endif
 
 #include <EXTERN.h>
@@ -143,9 +153,13 @@ SCOPE: {
     #return $compiler if $compiler;
     my $compiler = XS::TCC::TCCState->new;
     $compiler->add_sysinclude_path($RuntimeIncludeDir);
+	$compiler->add_sysinclude_path($PerlCoreDir);
     if ($^O eq 'darwin') {
         $compiler->define_symbol("__XS_TCC_DARWIN__", 1);
     }
+	elsif ($^O =~ /MSWin/) {
+		$compiler->define_symbol("__XS_TCC_WIN__", 1);
+	}
     #push @compilers, $compiler;
     return $compiler;
   } # end _get_compiler

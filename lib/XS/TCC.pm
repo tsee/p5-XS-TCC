@@ -462,7 +462,7 @@ XS::TCC - Embed, wrap & compile C code in Perl without going to disk
     }
   };
   
-  print foo(3.1), "\n"; # prints 6.2
+  print foo(3), "\n"; # prints 6
   # more elaborate functions involving Perl types work as well
 
 =head1 DESCRIPTION
@@ -513,7 +513,7 @@ David Mertens
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2013, 2014 by Steffen Mueller
+Copyright (C) 2013, 2014, 2016 by Steffen Mueller
 
   XS::TCC is distributed under the GNU Lesser General Public License
   (see COPYING file).

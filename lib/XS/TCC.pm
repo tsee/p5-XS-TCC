@@ -453,7 +453,6 @@ XS::TCC - Embed, wrap & compile C code in Perl without going to disk
 
 =head1 SYNOPSIS
 
-  # WARNING interface is bound to change...
   use XS::TCC qw(tcc_inline);
   
   tcc_inline q{

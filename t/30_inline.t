@@ -113,5 +113,55 @@ is(wrapper(5), 10, "add_files works for C file");
 
 pass("Alive");
 
+################################################################################
+
+tcc_inline
+  #warn_code => 1,
+  q{
+  /* efficient */
+  int which_context(pTHX) {
+    return (int)GIMME_V;
+  }
+
+  /* less efficient */
+  int which_context_slow() {
+    dTHX;
+    return (int)GIMME_V;
+  }
+  };
+
+pass("Alive after compilation");
+
+SCOPE: {
+  my $s = main::which_context();
+  ok(defined($s), "pTHX works");
+
+  $s = main::which_context_slow();
+  ok(defined($s), "dTHX works (testing code from docs)");
+}
+
+pass("Alive");
+
+################################################################################
+
+tcc_inline
+  #warn_code => 1,
+  q{
+    int get_underbar_sum(pTHX_ int bar) {
+      dUNDERBAR;
+      return (int)SvIV(UNDERBAR) + bar;
+    }
+  };
+
+pass("Alive after compilation");
+
+SCOPE: {
+  local $_ = 42;
+  is(main::get_underbar_sum(12), 42+12, "pTHX_ works");
+}
+
+pass("Alive");
+
+################################################################################
 
 done_testing();

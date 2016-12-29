@@ -481,6 +481,110 @@ is bound to be relatively faster.
 The output of TCC is slower than the equivalent function compiled with GCC,
 but both beat regular Perl by a wide margin {citation required}.
 
+=head1 FUNCTIONS
+
+=head2 tcc_inline
+
+The optionally exported F<tcc_inline> function is the main end user interface for
+C<XS::TCC>. In its simplest form, it simply takes a string of C code as its first
+parameter. The C code will be compiled with TCC on the fly (and in memory rather than
+on disk as with C<Inline>), and any C functions in that string will be bound
+under the same name as XS functions. The argument and return types will be mapped
+with Perl's standard C<typemap> functionality, see also the L<perlxstypemap> man page.
+
+Optionally, you can provide named parameters to C<tcc_inline> as key-value pairs preceding the code string:
+
+  tcc_inline(
+    option => 'value',
+    option2 => 'value2',
+    q{ int foo() {return 42;} }
+  );
+
+Valid options are:
+
+=over 2
+
+=item package
+
+The Perl package to put the XS functions into instead of your current
+package.
+
+=item typemap
+
+The value for this option can be either a string of typemap code
+(ie. what you would put in a C<TYPEMAP> block in XS or a typemap
+file in a Perl XS distribution) or an L<ExtUtils::Typemap> object.
+
+In either case, the given typemap will be merged with the core perl
+typemaps (your custom ones will supercede the core ones where applicable)
+and the resulting merged typemap will be used for the compilation.
+
+=item ccopts
+
+Any compiler flags you want to pass. By default, C<XS::TCC> will use
+L<ExtUtils::Embed> to intuit your CC options. If you pass a C<ccopts>
+value, those options will replace the default options from
+C<ExtUtils::Embed::ccopts>.
+
+=item add_files
+
+Can be a single path/file name or an array ref containing one or multiple.
+These additional C code-containing files will be passed to TCC to compile.
+
+They will B<NOT> be parsed for function signatures by C<XS::TCC>. That is to say,
+functions in these files will B<NOT> be exposed as XSUBs.
+
+=item code
+
+The C code to compile. You can use this form instead of the trailing
+code string. (But not both.)
+
+=item warn_code
+
+Debugging: If this is set to a true value, the generated XS code will be
+passed to C<warn> before compiling it.
+
+=back
+
+=head1 ADVANCED NOTES
+
+This is a very incomplete section with notes on advanced usage.
+
+=head2 Perl Context
+
+In XS, it's very common to pass a pointer to the I<currently active Perl
+interpreter>, also known as C<THX> around. Many Perl API functions need to have
+such a context around to function properly. For convenience, one can
+find the currently active Perl interpreter without passing it around as a
+function parameter, but this comes at the cost of performance.
+
+C<XS::TCC> allows you to include the standard C<pTHX> and C<pTHX_> macros in your
+function signatures to get the Perl context as an argument in your C function.
+To wit, the following to functions are equivalent in that they return the type
+of context that the function is called in (as the Perl internal integer ids
+corresponding to void/scalar/list contexts). This is a very useless thing to do, of course, this is for demonstration purposes only):
+
+  /* efficient */
+  int which_context(pTHX) {
+    return (int)GIMME_V;
+  }
+
+  /* less efficient */
+  int which_context_slow() {
+    dTHX;
+    return (int)GIMME_V;
+  }
+
+Testing this with a simple script gives on a threaded perl:
+
+  $ perl -Mblib author_tools/dthx_benchmark.pl 
+                  Rate  pTHX   dTHX
+  pTHX  1860.2+-0.31/s    -- -12.5%
+  dTHX 2124.91+-0.14/s 14.2%     --
+
+On a perl compiled without multi-threading support, the timings are
+equal between the two variants.
+
 =head1 SEE ALSO
 
 =over

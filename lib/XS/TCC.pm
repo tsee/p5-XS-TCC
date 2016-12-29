@@ -466,9 +466,6 @@ XS::TCC - Embed, wrap & compile C code in Perl without going to disk
 
 =head1 DESCRIPTION
 
-B<This is a highly experimental module. Use at your own risk. Get in
-touch with the author(s) if in doubt.>
-
 C<XS::TCC> allows you to embed C code into your Perl that is compiled
 and linked on the fly, in memory, without ever touching your disk
 except to read the Perl code in the first place. This amazing feat

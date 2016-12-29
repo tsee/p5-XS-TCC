@@ -490,6 +490,8 @@ but both beat regular Perl by a wide margin {citation required}.
 
 =item * L<Alien::TinyCC>
 
+=item * L<C::Blocks>
+
 =item * L<C::TinyCompiler>
 
 =item * L<C::TCC>

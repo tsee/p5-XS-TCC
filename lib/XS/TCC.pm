@@ -48,6 +48,12 @@ our $CCOPTS;
 {
   local $0 = "NOT A -e LINE!"; # ExtUtils::Embed is daft
   $CCOPTS = ExtUtils::Embed::ccopts;
+
+  # -DDEBUGGING causes some 'interesting' corner cases for tcc and
+  # some people/systems, see:
+  # https://rt.perl.org/Public/Bug/Display.html?id=130046
+  # So remove -DDEBUGGING from the tcc invocation by default.
+  $CCOPTS =~ s/\b-DDEBUGGING\b//g;
 }
 
 my $CodeHeader = <<'HERE';

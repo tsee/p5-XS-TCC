@@ -1,5 +1,13 @@
 Revision history for Perl extension XS::TCC.
 
+0.05  Mon Jan  1 08:00:00 2017
+  - Recommending C::Blocks as a good alternative.
+  - Workaround for -DDEBUGGING troubles.
+  - Much more documentation.
+  - pTHX-using tests
+  - Alien::TinyCC compatibility fixes.
+  - Windows fixes (though that might not be perfect still)
+
 0.04  Tue Mar 18 08:00:00 2014
   - Build/test fixes on recent Perls: Were accidentally seeing
     gcc branch prediction hints.

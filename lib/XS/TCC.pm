@@ -3,7 +3,7 @@ use 5.10.1;
 use strict;
 use warnings;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use constant {
   TCC_OUTPUT_MEMORY     => 0,
